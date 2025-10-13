@@ -1,30 +1,28 @@
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const adminLogin = async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const user = await User.findOne({ username, type: 'admin' });
-    if(!user) return res.status(401).json({ message: 'Admin não encontrado' });
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if(!ok) return res.status(401).json({ message: 'Senha inválida' });
-    const token = jwt.sign({ id: user._id, type: user.type }, process.env.JWT_SECRET);
-    res.json({ token, type: user.type });
-  } catch (err) { res.status(500).json({ message: err.message }) }
-};
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-const mesaLogin = async (req, res) => {
-  const { mesaNumber } = req.body;
-  try {
-    let mesaUser = await User.findOne({ mesaNumber, type: 'mesa' });
-    if(!mesaUser) {
-      mesaUser = await User.create({ username: `mesa${mesaNumber}`, type: 'mesa', mesaNumber });
+// Login
+exports.login = async (req, res) => {
+    const { type, username, password, tableNumber } = req.body;
+
+    if(type === 'admin') {
+        if(username !== 'admin' || password !== '123456') {
+            return res.status(401).json({ message: 'Credenciais inválidas' });
+        }
+        const token = jwt.sign({ type: 'admin', username }, JWT_SECRET);
+        return res.json({ token });
     }
-    // sem senha pra mesa; retornamos token simples
-    const token = jwt.sign({ id: mesaUser._id, type: mesaUser.type, mesaNumber }, process.env.JWT_SECRET);
-    res.json({ token, type: mesaUser.type, mesaNumber });
-  } catch (err) { res.status(500).json({ message: err.message }) }
-};
 
-module.exports = { adminLogin, mesaLogin };
+    if(type === 'mesa') {
+        let mesa = await User.findOne({ tableNumber });
+        if(!mesa) {
+            mesa = await User.create({ type: 'mesa', username: `mesa${tableNumber}`, tableNumber });
+        }
+        const token = jwt.sign({ type: 'mesa', tableNumber }, JWT_SECRET);
+        return res.json({ token });
+    }
+
+    res.status(400).json({ message: 'Tipo de usuário inválido' });
+};
