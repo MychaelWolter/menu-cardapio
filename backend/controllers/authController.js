@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-// Login
 exports.login = async (req, res) => {
     const { type, username, password, tableNumber } = req.body;
 
