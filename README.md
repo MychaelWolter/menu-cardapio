@@ -1,5 +1,7 @@
 para rodar instale: 
 
+npm init -y
+
 npm install express mongoose cors dotenv jsonwebtoken
 
 npm install --save-dev nodemon
@@ -10,4 +12,5 @@ npm install --save-dev nodemon
 }
 
 npm run dev
+ou
 npm start
