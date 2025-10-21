@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - My Gastronomy</title>
+  <link rel="stylesheet" href="../css/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <h2>🍽️ My Gastronomy</h2>
+    <select id="userType">
+      <option value="admin">Administrador</option>
+      <option value="mesa">Mesa</option>
+    </select>
+
+    <div id="adminLogin">
+      <input type="text" id="username" placeholder="Usuário">
+      <input type="password" id="password" placeholder="Senha">
+    </div>
+
+    <div id="mesaLogin" style="display:none;">
+      <input type="number" id="tableNumber" placeholder="Número da mesa">
+    </div>
+
+    <button id="loginBtn">Entrar</button>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+</body>
+</html>

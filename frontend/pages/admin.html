@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - My Gastronomy</title>
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <h2>👨‍🍳 Painel Administrativo</h2>
+    <button id="tabMenu">Gerir Cardápio</button>
+    <button id="tabOrders">Comandas</button>
+
+    <div id="menuCrud" class="tab">
+      <h3>CRUD Cardápio</h3>
+      <input id="itemName" placeholder="Nome">
+      <input id="itemDesc" placeholder="Descrição">
+      <input id="itemPrice" placeholder="Preço">
+      <button id="addMenu">Adicionar</button>
+      <ul id="menuList"></ul>
+    </div>
+
+    <div id="ordersTab" class="tab" style="display:none;">
+      <h3>Comandas</h3>
+      <ul id="orderList"></ul>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>
