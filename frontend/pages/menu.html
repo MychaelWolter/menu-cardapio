@@ -6,20 +6,73 @@
   <link rel="stylesheet" href="../css/menu.css">
 </head>
 <body>
-  <div class="menu-container">
-    <h2>📖 Cardápio</h2>
-    <ul id="menuList"></ul>
 
-    <h3>Digite o número do item e quantidade:</h3>
-    <input type="number" id="itemId" placeholder="ID do item">
-    <input type="number" id="quantity" placeholder="Quantidade">
-    <button id="addItem">Adicionar</button>
+  <header class="header">
+    <nav class="navbar">
+      <div class="nav-brand">
+        <h1>🍽️ Restaurante Sabor & Arte</h1>
+      </div>
+      
+      <div class="nav-info">
+        <button id="logoutBtn" class="logout-btn" title="Voltar ao Login">
+          <span class="logout-icon">🚪</span>
+          <span class="logout-text">Sair</span>
+        </button>
+        <span class="table-number">Mesa: <strong id="currentTable">-</strong></span>
+      </div>
+    </nav>
+  </header>
 
-    <h3>Pedido Atual:</h3>
-    <ul id="orderList"></ul>
+    <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <div class="menu-container">
+      <h2>📖 Cardápio</h2>
+      <ul id="menuList"></ul>
 
-    <button id="sendOrder">Enviar Pedido</button>
-  </div>
+      <h3>Digite o número do item e quantidade:</h3>
+      <div class="input-group">
+        <input type="number" id="itemId" placeholder="ID do item" min="1">
+        <input type="number" id="quantity" placeholder="Quantidade" min="1">
+        <button id="addItem" class="btn-primary">Adicionar</button>
+      </div>
+
+      <h3>Pedido Atual:</h3>
+      <div class="order-summary">
+        <ul id="orderList"></ul>
+        <div class="order-total">
+          <strong>Total: R$ <span id="totalAmount">0.00</span></strong>
+        </div>
+      </div>
+
+      <div class="order-actions">
+        <button id="sendOrder" class="btn-success">Enviar Pedido</button>
+        <button id="clearOrder" class="btn-secondary">Limpar Pedido</button>
+      </div>
+    </div>
+  </main>
+
+   <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Restaurante Sabor & Arte</h4>
+        <p>Rua das Flores, 123 - Centro</p>
+        <p>Tel: (11) 9999-9999</p>
+      </div>
+      <div class="footer-section">
+        <h4>Horário de Funcionamento</h4>
+        <p>Segunda a Sábado: 11h às 23h</p>
+        <p>Domingo: 11h às 17h</p>
+      </div>
+      <div class="footer-section">
+        <h4>Atendimento</h4>
+        <p>Chamar Garçom</p>
+        <p>Precisa de Ajuda?</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Restaurante Sabor & Arte. Todos os direitos reservados.</p>
+    </div>
+  </footer>
 
   <script src="../js/api.js"></script>
   <script src="../js/menu.js"></script>
