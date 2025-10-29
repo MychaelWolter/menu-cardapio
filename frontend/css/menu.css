@@ -301,15 +301,6 @@ body {
     justify-content: space-between;
   }
   
-  .logout-btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-  
-  .logout-text {
-    display: none;
-  }
-  
   .footer {
     margin-top: auto;
     position: relative;

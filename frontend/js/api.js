@@ -19,6 +19,18 @@ async function apiPost(endpoint, body) {
   return res.json();
 }
 
+async function apiPut(endpoint, body) {
+  const res = await fetch(API_URL + endpoint, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
 async function apiDelete(endpoint) {
   const res = await fetch(API_URL + endpoint, {
     method: 'DELETE',

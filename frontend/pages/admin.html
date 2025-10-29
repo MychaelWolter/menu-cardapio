@@ -1,32 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Admin - My Gastronomy</title>
-  <link rel="stylesheet" href="../css/admin.css">
-</head>
-<body>
-  <div class="admin-container">
-    <h2>👨‍🍳 Painel Administrativo</h2>
-    <button id="tabMenu">Gerir Cardápio</button>
-    <button id="tabOrders">Comandas</button>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Administrador - TalkMenu</title>
+    <link rel="stylesheet" href="../css/admin.css" />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="navbar">
+        <div class="nav-brand">
+          <h1>🍰 TalkMenu</h1>
+        </div>
 
-    <div id="menuCrud" class="tab">
-      <h3>CRUD Cardápio</h3>
-      <input id="itemName" placeholder="Nome">
-      <input id="itemDesc" placeholder="Descrição">
-      <input id="itemPrice" placeholder="Preço">
-      <button id="addMenu">Adicionar</button>
-      <ul id="menuList"></ul>
+        <div class="nav-info">
+          <button id="logoutBtn" class="logout-btn" title="Voltar ao Login">
+            <span class="logout-text">Sair</span>
+          </button>
+          <span class="admin">Administrador</span>
+        </div>
+      </nav>
+    </header>
+
+    <div class="admin-container">
+      <h2>👨‍🍳 Painel Administrativo</h2>
+      <div class="tabs">
+        <button id="tabMenu">Gerir Cardápio</button>
+        <button id="tabOrders">Comandas</button>
+      </div>
+
+      <!-- CRUD DO CARDÁPIO -->
+      <div id="menuCrud" class="tab">
+        <h3>🍽️ Cardápio</h3>
+        <div class="form">
+          <input id="itemName" placeholder="Nome" />
+          <input id="itemDesc" placeholder="Descrição" />
+          <input id="itemPrice" placeholder="Preço" />
+          <button id="addMenu">Adicionar</button>
+        </div>
+        <ul id="menuList"></ul>
+      </div>
+
+      <!-- COMANDAS -->
+      <div id="ordersTab" class="tab" style="display: none">
+        <h3>📋 Comandas</h3>
+        <ul id="orderList"></ul>
+      </div>
     </div>
 
-    <div id="ordersTab" class="tab" style="display:none;">
-      <h3>Comandas</h3>
-      <ul id="orderList"></ul>
-    </div>
-  </div>
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>TalkMenu</h4>
+          <p>Rua das Flores, 123 - Centro</p>
+          <p>Tel: (11) 9999-9999</p>
+        </div>
+        <div class="footer-section">
+          <h4>Horário de Funcionamento</h4>
+          <p>Segunda a Sábado: 11h às 23h</p>
+          <p>Domingo: 11h às 17h</p>
+        </div>
+        <div class="footer-section">
+          <h4>Atendimento</h4>
+          <p>Chamar Garçom</p>
+          <p>Precisa de Ajuda?</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 TalkMenu. Todos os direitos reservados.</p>
+      </div>
+    </footer>
 
-  <script src="../js/api.js"></script>
-  <script src="../js/admin.js"></script>
-</body>
+    <script src="../js/api.js"></script>
+    <script src="../js/admin.js"></script>
+  </body>
 </html>
