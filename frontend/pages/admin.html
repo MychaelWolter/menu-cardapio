@@ -23,9 +23,13 @@
 
     <div class="admin-container">
       <h2>👨‍🍳 Painel Administrativo</h2>
-      <div class="tabs">
-        <button id="tabMenu">Gerir Cardápio</button>
-        <button id="tabOrders">Comandas</button>
+
+      <!-- Botões das abas centralizados -->
+      <div class="tabs-container">
+        <div class="tabs">
+          <button id="tabMenu">Gerir Cardápio</button>
+          <button id="tabOrders">Comandas</button>
+        </div>
       </div>
 
       <!-- CRUD DO CARDÁPIO -->
@@ -35,7 +39,9 @@
           <input id="itemName" placeholder="Nome" />
           <input id="itemDesc" placeholder="Descrição" />
           <input id="itemPrice" placeholder="Preço" />
-          <button id="addMenu">Adicionar</button>
+          <div class="button-container">
+            <button id="addMenu">Adicionar</button>
+          </div>
         </div>
         <ul id="menuList"></ul>
       </div>
