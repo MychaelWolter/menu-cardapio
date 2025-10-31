@@ -1,79 +1,84 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Mesa - TalkMenu</title>
-  <link rel="stylesheet" href="../css/menu.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mesa - TalkMenu</title>
+    <link rel="stylesheet" href="../css/menu.css" />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="navbar">
+        <div class="nav-brand">
+          <h1>🍰 TalkMenu</h1>
+        </div>
 
-  <header class="header">
-    <nav class="navbar">
-      <div class="nav-brand">
-        <h1>🍰 TalkMenu</h1>
-      </div>
-      
-      <div class="nav-info">
-        <button id="logoutBtn" class="logout-btn" title="Voltar ao Login">
-          <span class="logout-text">Sair</span>
-        </button>
-        <span class="table-number">Mesa <strong id="currentTable">-</strong></span>
-      </div>
-    </nav>
-  </header>
+        <div class="nav-info">
+          <button id="logoutBtn" class="logout-btn" title="Voltar ao Login">
+            <span class="logout-text">Sair</span>
+          </button>
+          <span class="table-number"
+            >Mesa <strong id="currentTable">-</strong></span
+          >
+        </div>
+      </nav>
+    </header>
 
     <!-- Conteúdo Principal -->
-  <main class="main-content">
-    <div class="menu-container">
-      <h2>📖 Cardápio</h2>
-      <ul id="menuList"></ul>
+    <main class="main-content">
+      <div class="menu-container">
+        <h2>📖 Cardápio</h2>
+        <div class="menu-carousel">
+          <button class="carousel-btn prev">⟨</button>
+          <div class="carousel-track" id="menuCarousel"></div>
+          <button class="carousel-btn next">⟩</button>
+        </div>
 
-      <h3>Digite o número do item e quantidade:</h3>
-      <div class="input-group">
-        <input type="number" id="itemId" placeholder="ID do item" min="1">
-        <input type="number" id="quantity" placeholder="Quantidade" min="1">
-        <button id="addItem" class="btn-primary">Adicionar</button>
-      </div>
+        <h3>Digite o número do item e quantidade:</h3>
+        <div class="input-group">
+          <input type="number" id="itemId" placeholder="ID do item" min="1" />
+          <input type="number" id="quantity" placeholder="Quantidade" min="1" />
+          <button id="addItem" class="btn-primary">Adicionar</button>
+        </div>
 
-      <h3>Pedido Atual:</h3>
-      <div class="order-summary">
-        <ul id="orderList"></ul>
-        <div class="order-total">
-          <strong>Total: R$ <span id="totalAmount">0.00</span></strong>
+        <h3>Pedido Atual:</h3>
+        <div class="order-summary">
+          <ul id="orderList"></ul>
+          <div class="order-total">
+            <strong>Total: R$ <span id="totalAmount">0.00</span></strong>
+          </div>
+        </div>
+
+        <div class="order-actions">
+          <button id="sendOrder" class="btn-success">Enviar Pedido</button>
+          <button id="clearOrder" class="btn-secondary">Limpar Pedido</button>
         </div>
       </div>
+    </main>
 
-      <div class="order-actions">
-        <button id="sendOrder" class="btn-success">Enviar Pedido</button>
-        <button id="clearOrder" class="btn-secondary">Limpar Pedido</button>
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>TalkMenu</h4>
+          <p>Rua das Flores, 123 - Centro</p>
+          <p>Tel: (11) 9999-9999</p>
+        </div>
+        <div class="footer-section">
+          <h4>Horário de Funcionamento</h4>
+          <p>Segunda a Sábado: 11h às 23h</p>
+          <p>Domingo: 11h às 17h</p>
+        </div>
+        <div class="footer-section">
+          <h4>Atendimento</h4>
+          <p>Chamar Garçom</p>
+          <p>Precisa de Ajuda?</p>
+        </div>
       </div>
-    </div>
-  </main>
+      <div class="footer-bottom">
+        <p>&copy; 2025 TalkMenu. Todos os direitos reservados.</p>
+      </div>
+    </footer>
 
-   <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-section">
-        <h4>TalkMenu</h4>
-        <p>Rua das Flores, 123 - Centro</p>
-        <p>Tel: (11) 9999-9999</p>
-      </div>
-      <div class="footer-section">
-        <h4>Horário de Funcionamento</h4>
-        <p>Segunda a Sábado: 11h às 23h</p>
-        <p>Domingo: 11h às 17h</p>
-      </div>
-      <div class="footer-section">
-        <h4>Atendimento</h4>
-        <p>Chamar Garçom</p>
-        <p>Precisa de Ajuda?</p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; 2025 TalkMenu. Todos os direitos reservados.</p>
-    </div>
-  </footer>
-
-  <script src="../js/api.js"></script>
-  <script src="../js/menu.js"></script>
-</body>
+    <script src="../js/api.js"></script>
+    <script src="../js/menu.js"></script>
+  </body>
 </html>

@@ -31,64 +31,85 @@ function updateTotal() {
   totalAmountSpan.textContent = total.toFixed(2);
 }
 
-// Função para voltar ao login - SEM CONFIRMAÇÃO
+// Função para voltar ao login
 logoutBtn.addEventListener('click', () => {
-  // Remove o token do localStorage
   localStorage.removeItem('token');
-  // Redireciona diretamente para a página de login
-  window.location.href = '../index.html'; // Ajuste o caminho conforme necessário
+  window.location.href = '../index.html';
 });
 
+// ===== Carrega o cardápio =====
 async function loadMenu() {
   try {
     menuItems = await apiGet('/menu');
-    menuList.innerHTML = '';
+    const carousel = document.getElementById('menuCarousel');
+    carousel.innerHTML = '';
+
     menuItems.forEach((item, index) => {
-      const li = document.createElement('li');
-      li.textContent = `${index + 1} - ${item.name} - R$ ${item.price.toFixed(2)}`;
-      menuList.appendChild(li);
+      const card = document.createElement('div');
+      card.classList.add('menu-card');
+      card.innerHTML = `
+        <h4>${index + 1}. ${item.name}</h4>
+        <p class="menu-description">${item.description || "Sem descrição disponível."}</p>
+        <p><strong>R$ ${item.price.toFixed(2)}</strong></p>
+      `;
+      carousel.appendChild(card);
     });
 
-    // Leitor de voz do cardápio
+    // Navegação do carrossel
+    const track = document.querySelector('.carousel-track');
+    const prevBtn = document.querySelector('.carousel-btn.prev');
+    const nextBtn = document.querySelector('.carousel-btn.next');
+
+    const scrollStep = 300;
+    nextBtn.addEventListener('click', () => {
+      track.scrollBy({ left: scrollStep, behavior: 'smooth' });
+    });
+    prevBtn.addEventListener('click', () => {
+      track.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+    });
+
+    // ===== Leitor de voz do cardápio =====
     const synth = window.speechSynthesis;
-    const text = menuItems.map(i => `${i.name}, preço ${i.price.toFixed(2)} reais.`).join('. ');
+    const text = menuItems
+      .map(i => `${i.name}, ${i.description || ''}, preço ${i.price.toFixed(2)} reais.`)
+      .join('. ');
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = 'pt-BR';
     synth.speak(utter);
+
   } catch (error) {
     console.error('Erro ao carregar cardápio:', error);
     alert('Erro ao carregar cardápio. Tente novamente.');
   }
 }
 
+// ===== Adicionar item ao pedido =====
 addItemBtn.addEventListener('click', () => {
   const id = parseInt(document.getElementById('itemId').value) - 1;
   const quantity = parseInt(document.getElementById('quantity').value);
-  
+
   if (isNaN(id) || isNaN(quantity) || quantity < 1) {
     alert('Por favor, insira valores válidos para ID e quantidade.');
     return;
   }
-  
+
   if (menuItems[id]) {
-    orderItems.push({ 
-      menuItem: menuItems[id]._id, 
+    orderItems.push({
+      menuItem: menuItems[id]._id,
       quantity,
       name: menuItems[id].name,
       price: menuItems[id].price
     });
-    
+
     const li = document.createElement('li');
     li.innerHTML = `
       <span>${menuItems[id].name} x${quantity}</span>
       <span>R$ ${(menuItems[id].price * quantity).toFixed(2)}</span>
     `;
     orderList.appendChild(li);
-    
-    // Atualizar o total
+
     updateTotal();
-    
-    // Limpar campos de input
+
     document.getElementById('itemId').value = '';
     document.getElementById('quantity').value = '';
   } else {
@@ -96,27 +117,29 @@ addItemBtn.addEventListener('click', () => {
   }
 });
 
+// ===== Limpar pedido =====
 clearOrderBtn.addEventListener('click', () => {
   orderList.innerHTML = '';
   orderItems = [];
-  updateTotal(); // Atualiza o total para zero
+  updateTotal();
 });
 
+// ===== Enviar pedido =====
 sendOrderBtn.addEventListener('click', async () => {
   if (orderItems.length === 0) {
     alert('Nenhum item adicionado ao pedido!');
     return;
   }
-  
+
   try {
-    const res = await apiPost('/orders', { 
-      tableNumber, 
+    await apiPost('/orders', {
+      tableNumber,
       items: orderItems.map(({ menuItem, quantity }) => ({ menuItem, quantity }))
     });
     alert('Pedido enviado com sucesso!');
     orderList.innerHTML = '';
     orderItems = [];
-    updateTotal(); // Atualiza o total para zero após enviar
+    updateTotal();
   } catch (error) {
     console.error('Erro ao enviar pedido:', error);
     alert('Erro ao enviar pedido. Tente novamente.');
