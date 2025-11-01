@@ -170,6 +170,25 @@ input:focus {
   outline: none;
 }
 
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menu-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-thumb {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid #ffb6c1;
+}
+
 /* ===== CONTAINER DO BOTÃO ADICIONAR ===== */
 .button-container {
   display: flex;

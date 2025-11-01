@@ -2,7 +2,7 @@ para rodar instale:
 
 npm init -y
 
-npm install express mongoose cors dotenv jsonwebtoken
+npm install express mongoose cors dotenv jsonwebtoken multer
 
 npm install --save-dev nodemon
 
