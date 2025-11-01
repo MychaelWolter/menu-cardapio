@@ -298,11 +298,20 @@ body {
 
 .input-group input {
   padding: 0.75rem;
-  border: 2px solid #ddd;
+  border: 2px solid #f3d7da;
   border-radius: 5px;
   font-size: 1rem;
   flex: 1;
   min-width: 120px;
+  color: #4a3c3c;
+  background-color: #fff8f8;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+  border-color: #ff808c;
+  outline: none;
+  box-shadow: 0 0 6px rgba(255, 128, 140, 0.3);
 }
 
 .btn-primary {
