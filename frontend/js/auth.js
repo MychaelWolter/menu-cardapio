@@ -25,11 +25,12 @@ loginBtn.addEventListener('click', async () => {
   }
 
   const res = await apiPost('/auth/login', payload);
+
   if (res.token) {
     localStorage.setItem('token', res.token);
     if (type === 'admin') window.location.href = './admin.html';
     else window.location.href = './menu.html';
   } else {
-    alert(res.message || 'Erro ao fazer login');
+    alert(res.message || 'Erro ao fazer login. Verifique suas credenciais.');
   }
 });

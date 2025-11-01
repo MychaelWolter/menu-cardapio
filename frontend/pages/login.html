@@ -1,31 +1,82 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Login - TalkMenu</title>
-  <link rel="stylesheet" href="../css/login.css">
-</head>
-<body>
-  <div class="login-container">
-    <h2>🍰 TalkMenu</h2>
-    <select id="userType">
-      <option value="admin">Administrador</option>
-      <option value="mesa">Mesa</option>
-    </select>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login - TalkMenu</title>
+    <link rel="stylesheet" href="../css/login.css" />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="navbar">
+        <div class="nav-brand">
+          <h1>🍰 TalkMenu</h1>
+        </div>
+      </nav>
+    </header>
 
-    <div id="adminLogin">
-      <input type="text" id="username" placeholder="Usuário">
-      <input type="password" id="password" placeholder="Senha">
+    <div class="login-container">
+      <div class="login-box">
+        <h2 class="subtitle">Acesse sua conta</h2>
+
+        <select id="userType" class="input-select">
+          <option value="admin">Administrador</option>
+          <option value="mesa">Mesa</option>
+        </select>
+
+        <!-- Login do administrador -->
+        <div id="adminLogin" class="login-form">
+          <input
+            type="text"
+            id="username"
+            placeholder="Usuário"
+            class="input-field"
+          />
+          <input
+            type="password"
+            id="password"
+            placeholder="Senha"
+            class="input-field"
+          />
+        </div>
+
+        <!-- Login da mesa -->
+        <div id="mesaLogin" class="login-form" style="display: none">
+          <input
+            type="number"
+            id="tableNumber"
+            placeholder="Número da mesa"
+            class="input-field"
+          />
+        </div>
+
+        <button id="loginBtn" class="login-btn">Entrar</button>
+      </div>
     </div>
 
-    <div id="mesaLogin" style="display:none;">
-      <input type="number" id="tableNumber" placeholder="Número da mesa">
-    </div>
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>TalkMenu</h4>
+          <p>Rua das Flores, 123 - Centro</p>
+          <p>Tel: (11) 9999-9999</p>
+        </div>
+        <div class="footer-section">
+          <h4>Horário de Funcionamento</h4>
+          <p>Segunda a Sábado: 11h às 23h</p>
+          <p>Domingo: 11h às 17h</p>
+        </div>
+        <div class="footer-section">
+          <h4>Atendimento</h4>
+          <p>Chamar Garçom</p>
+          <p>Precisa de Ajuda?</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 TalkMenu. Todos os direitos reservados.</p>
+      </div>
+    </footer>
 
-    <button id="loginBtn">Entrar</button>
-  </div>
-
-  <script src="../js/api.js"></script>
-  <script src="../js/auth.js"></script>
-</body>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+  </body>
 </html>
