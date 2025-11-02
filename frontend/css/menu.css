@@ -15,7 +15,7 @@ body {
   flex-direction: column;
 }
 
-/* Header Styles */
+/* Header */
 .header {
   background-color: #ffebed;
   color: #734e52;
@@ -56,7 +56,6 @@ body {
   padding: 0.5rem 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-decoration: none;
   font-size: 1rem;
   font-weight: 600;
 }
@@ -66,21 +65,10 @@ body {
   color: #ff808c;
 }
 
-.logout-text:hover {
-  color: #ff808c;
-}
-
 .table-number {
   color: #734e52;
-  border: none;
   padding: 0.5rem 1rem;
-  transition: all 0.3s ease;
   font-size: 1rem;
-}
-
-.table-number:hover {
-  transform: translateY(-1px);
-  color: #ff808c;
 }
 
 /* Main Content */
@@ -102,81 +90,69 @@ body {
 }
 
 .menu-container h2 {
+  text-align: center;
   color: #734e52;
   margin-bottom: 1.5rem;
-  text-align: center;
-  font-size: 1.5rem;
 }
 
-.menu-container h3 {
-  color: #734e52;
-  margin: 1.5rem 0 1rem 0;
-}
-
-/* ===== CARROSSEL DO CARDÁPIO (ESTILO MODERNO TALKMENU) ===== */
+/* ===== CARROSSEL 3D ===== */
 .menu-carousel {
   position: relative;
+  width: 100%;
+  height: 450px;
+  perspective: 1000px;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 2.5rem;
-  overflow: hidden;
-  padding: 2rem 0;
   background: linear-gradient(145deg, #fff5f7, #ffe8ec);
   border-radius: 20px;
-  box-shadow: inset 0 0 10px rgba(255, 182, 193, 0.4), 0 0 15px rgba(255, 204, 213, 0.3);
 }
 
 .carousel-track {
-  display: flex;
-  gap: 2rem;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
-  padding: 0 1rem;
-}
-
-.carousel-track::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .menu-card {
-  flex: 0 0 280px;
-  min-width: 220px;
-  max-width: 260px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240px;
+  height: 380px;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: all 0.5s ease;
   background: linear-gradient(160deg, #fff, #ffe6eb);
   border: 2px solid #ffb6c1;
   border-radius: 20px;
-  padding: 1.5rem;
+  padding: 1rem;
   text-align: center;
   color: #70242c;
   box-shadow: 0 4px 15px rgba(255, 128, 140, 0.25);
-  transition: all 0.4s ease;
-  position: relative;
-  overflow: hidden;
+  z-index: 1;
 }
 
-.menu-card::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,182,193,0.25) 0%, transparent 60%);
-  transform: rotate(25deg);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.menu-card:hover::before {
+.menu-card.active {
+  width: 260px; /* Aumentei a largura do card central */
+  height: 400px; /* Aumentei a altura do card central */
+  transform: translate(-50%, -50%) scale(1);
   opacity: 1;
+  z-index: 5;
 }
 
-.menu-card:hover {
-  transform: translateY(-10px) scale(1.03);
-  box-shadow: 0 8px 25px rgba(255, 128, 140, 0.35);
-  border-color: #ff808c;
+.menu-card.left {
+  transform: translate(-150%, -50%) scale(0.8);
+  opacity: 0.5;
+  z-index: 3;
+}
+
+.menu-card.right {
+  transform: translate(50%, -50%) scale(0.8);
+  opacity: 0.5;
+  z-index: 3;
 }
 
 .menu-card h4 {
@@ -184,21 +160,17 @@ body {
   font-size: 1.2rem;
   color: #9c1c28;
   font-weight: 600;
-  letter-spacing: 0.5px;
 }
-
 .menu-card p {
   font-size: 1rem;
   font-weight: 600;
   color: #4a3c3c;
 }
-
 .menu-description {
   font-size: 0.95rem;
   color: #5c4b4b;
-  margin-bottom: 0.6rem;
-  line-height: 1.4;
   font-style: italic;
+  margin-bottom: 0.6rem;
 }
 
 .card-image-container {
@@ -216,36 +188,14 @@ body {
   border-radius: 15px;
 }
 
-/* Efeito de brilho ao passar o mouse */
-.menu-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -75%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.6) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  transition: 0.5s;
-}
-
-.menu-card:hover::after {
-  left: 125%;
-}
-
-/* Botões do carrossel */
+/* Botões */
 .carousel-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 30px;          /* largura fixa */
-  height: 30px;         /* altura fixa */
-  border-radius: 50%;   /* redondo */
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   background-color: #ffb6c1;
   border: none;
   cursor: pointer;
@@ -255,19 +205,14 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  padding: 0;           /* remove padding que pode deformar o círculo */
-  margin: 0;            /* remove margem que pode deformar o círculo */
 }
 
 .carousel-btn.prev {
-  left: 0;  /* extremidade esquerda */
+  left: 0;
 }
-
 .carousel-btn.next {
-  right: 0; /* extremidade direita */
+  right: 0;
 }
-
 .carousel-btn:hover {
   background-color: #f78da7;
   transform: scale(1.1) translateY(-50%);
@@ -288,6 +233,10 @@ body {
   border-radius: 4px;
 }
 */
+
+.menu-container h3 {
+  color: #734e52;
+}
 
 .input-group {
   display: flex;
@@ -484,19 +433,29 @@ body {
     flex-direction: column;
   }
 
+  .menu-carousel {
+    width: 100%;
+    height: 500px;
+  }
+
   .menu-card {
-    min-width: 160px;
-    max-width: 190px;
-    padding: 1rem;
+    width: 160px;
+    height: 450px;
+  }
+
+  .menu-card.active {
+    width: 280px;
+    height: 420px;
+  }
+
+  .carousel-btn {
+    width: 25px;
+    height: 25px;
+    font-size: 1rem;
   }
 
   .carousel-track {
     gap: 1rem;
-  }
-
-  .carousel-btn {
-    font-size: 1rem;
-    padding: 0.3rem 0.5rem;
   }
 
   .footer {

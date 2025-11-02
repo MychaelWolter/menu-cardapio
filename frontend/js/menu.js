@@ -22,6 +22,7 @@ try {
 
 let menuItems = [];
 let orderItems = [];
+let currentIndex = 0;
 
 // Função para calcular e atualizar o total
 function updateTotal() {
@@ -31,7 +32,7 @@ function updateTotal() {
   totalAmountSpan.textContent = total.toFixed(2);
 }
 
-// Função para voltar ao login
+// Logout
 logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("token");
   window.location.href = "../index.html";
@@ -47,53 +48,53 @@ async function loadMenu() {
     menuItems.forEach((item, index) => {
       const card = document.createElement("div");
       card.classList.add("menu-card");
-
       card.innerHTML = `
-    <div class="card-image-container">
-      <img 
-        src="${
-          item.image || "https://via.placeholder.com/280x180?text=Sem+Imagem"
-        }" 
-        alt="${item.name}" 
-        class="menu-card-img"
-      />
-    </div>
-    <h4>${index + 1}. ${item.name}</h4>
-    <p class="menu-description">${
-      item.description || "Sem descrição disponível."
-    }</p>
-    <p><strong>R$ ${item.price.toFixed(2)}</strong></p>
-  `;
-
+        <div class="card-image-container">
+          <img src="${item.image || "https://via.placeholder.com/280x180?text=Sem+Imagem"}" alt="${item.name}" class="menu-card-img" />
+        </div>
+        <h4>${index + 1}. ${item.name}</h4>
+        <p class="menu-description">${item.description || "Sem descrição disponível."}</p>
+        <p><strong>R$ ${item.price.toFixed(2)}</strong></p>
+      `;
       carousel.appendChild(card);
     });
 
-    // Navegação do carrossel
-    const track = document.querySelector(".carousel-track");
     const prevBtn = document.querySelector(".carousel-btn.prev");
     const nextBtn = document.querySelector(".carousel-btn.next");
 
-    const scrollStep = 300;
+    function updateCarousel() {
+      const cards = document.querySelectorAll(".menu-card");
+      const len = cards.length;
+
+      cards.forEach((c, i) => {
+        c.classList.remove("active", "left", "right");
+        if (i === currentIndex) c.classList.add("active");
+        if (i === (currentIndex - 1 + len) % len) c.classList.add("left");
+        if (i === (currentIndex + 1) % len) c.classList.add("right");
+      });
+    }
+
     nextBtn.addEventListener("click", () => {
-      track.scrollBy({ left: scrollStep, behavior: "smooth" });
-    });
-    prevBtn.addEventListener("click", () => {
-      track.scrollBy({ left: -scrollStep, behavior: "smooth" });
+      currentIndex = (currentIndex + 1) % menuItems.length;
+      updateCarousel();
     });
 
-    // ===== Leitor de voz do cardápio =====
+    prevBtn.addEventListener("click", () => {
+      currentIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+      updateCarousel();
+    });
+
+    updateCarousel();
+
+    // ===== Leitor de voz =====
     const synth = window.speechSynthesis;
     const text = menuItems
-      .map(
-        (i) =>
-          `${i.name}, ${i.description || ""}, preço ${i.price.toFixed(
-            2
-          )} reais.`
-      )
+      .map(i => `${i.name}, ${i.description || ""}, preço ${i.price.toFixed(2)} reais.`)
       .join(". ");
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "pt-BR";
     synth.speak(utter);
+
   } catch (error) {
     console.error("Erro ao carregar cardápio:", error);
     alert("Erro ao carregar cardápio. Tente novamente.");
@@ -126,7 +127,6 @@ addItemBtn.addEventListener("click", () => {
     orderList.appendChild(li);
 
     updateTotal();
-
     document.getElementById("itemId").value = "";
     document.getElementById("quantity").value = "";
   } else {
@@ -151,10 +151,7 @@ sendOrderBtn.addEventListener("click", async () => {
   try {
     await apiPost("/orders", {
       tableNumber,
-      items: orderItems.map(({ menuItem, quantity }) => ({
-        menuItem,
-        quantity,
-      })),
+      items: orderItems.map(({ menuItem, quantity }) => ({ menuItem, quantity })),
     });
     alert("Pedido enviado com sucesso!");
     orderList.innerHTML = "";
