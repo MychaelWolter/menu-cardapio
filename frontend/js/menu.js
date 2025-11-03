@@ -97,7 +97,7 @@ async function loadMenu() {
 
   } catch (error) {
     console.error("Erro ao carregar cardápio:", error);
-    alert("Erro ao carregar cardápio. Tente novamente.");
+    showError("Erro ao carregar cardápio. Tente novamente.");
   }
 }
 
@@ -107,7 +107,7 @@ addItemBtn.addEventListener("click", () => {
   const quantity = parseInt(document.getElementById("quantity").value);
 
   if (isNaN(id) || isNaN(quantity) || quantity < 1) {
-    alert("Por favor, insira valores válidos para ID e quantidade.");
+    showAlert("Por favor, insira valores válidos para ID e quantidade.");
     return;
   }
 
@@ -130,7 +130,7 @@ addItemBtn.addEventListener("click", () => {
     document.getElementById("itemId").value = "";
     document.getElementById("quantity").value = "";
   } else {
-    alert("Item inválido. Verifique o ID do item.");
+    showAlert("Item inválido. Verifique o ID do item.");
   }
 });
 
@@ -144,7 +144,7 @@ clearOrderBtn.addEventListener("click", () => {
 // ===== Enviar pedido =====
 sendOrderBtn.addEventListener("click", async () => {
   if (orderItems.length === 0) {
-    alert("Nenhum item adicionado ao pedido!");
+    showAlert("Nenhum item adicionado ao pedido!");
     return;
   }
 
@@ -153,13 +153,13 @@ sendOrderBtn.addEventListener("click", async () => {
       tableNumber,
       items: orderItems.map(({ menuItem, quantity }) => ({ menuItem, quantity })),
     });
-    alert("Pedido enviado com sucesso!");
+    showSuccess("Pedido enviado com sucesso!");
     orderList.innerHTML = "";
     orderItems = [];
     updateTotal();
   } catch (error) {
     console.error("Erro ao enviar pedido:", error);
-    alert("Erro ao enviar pedido. Tente novamente.");
+    showError("Erro ao enviar pedido. Tente novamente.");
   }
 });
 

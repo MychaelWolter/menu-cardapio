@@ -69,7 +69,7 @@ addMenuBtn.addEventListener("click", async () => {
   const imageFile = itemImage.files[0];
 
   if (!name || isNaN(price)) {
-    alert("Preencha o nome e o preço corretamente!");
+    showAlert("Preencha o nome e o preço corretamente!");
     return;
   }
 
@@ -87,18 +87,18 @@ addMenuBtn.addEventListener("click", async () => {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: formData,
       });
-      alert("Item atualizado com sucesso!");
+      showSuccess("Item atualizado com sucesso!");
     } else {
       // 🔹 Criando novo item
       await apiPost("/menu", formData, true);
-      alert("Item adicionado com sucesso!");
+      showSuccess("Item adicionado com sucesso!");
     }
 
     clearForm();
     loadMenu();
   } catch (err) {
     console.error("Erro ao salvar item:", err);
-    alert("Ocorreu um erro ao salvar o item.");
+    showError("Ocorreu um erro ao salvar o item.");
   }
 });
 
@@ -131,7 +131,8 @@ function clearForm() {
 
 // ==================== DELETAR ITEM ====================
 async function deleteItem(id) {
-  if (!confirm("Deseja deletar este item do cardápio?")) return;
+  const confirmed = await showConfirm("Deseja deletar este item do cardápio?");
+  if (!confirmed) return;
   await apiDelete(`/menu/${id}`);
   loadMenu();
   clearForm();
@@ -174,7 +175,8 @@ async function updateOrderStatus(id, status) {
 }
 
 async function deleteOrder(id) {
-  if (!confirm("Deseja deletar esta comanda?")) return;
+  const confirmed = await showConfirm("Deseja deletar esta comanda?");
+  if (!confirmed) return;
   await apiDelete(`/orders/${id}`);
   loadOrders();
 }

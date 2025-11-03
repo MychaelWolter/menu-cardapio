@@ -31,6 +31,6 @@ loginBtn.addEventListener('click', async () => {
     if (type === 'admin') window.location.href = './admin.html';
     else window.location.href = './menu.html';
   } else {
-    alert(res.message || 'Erro ao fazer login. Verifique suas credenciais.');
+    showError(res.message || 'Erro ao fazer login. Verifique suas credenciais.');
   }
 });

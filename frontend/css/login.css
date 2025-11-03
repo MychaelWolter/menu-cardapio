@@ -193,8 +193,8 @@ body {
 
   .login-btn {
     width: 100%;
-    max-width: none;
-    min-width: 0;
+    min-width: 200px; /* igual ao admin.css */
+    max-width: 300px;
   }
 
   .footer {
@@ -215,5 +215,11 @@ body {
 
   .login-box {
     padding: 1.8rem 1.2rem;
+  }
+
+  .login-btn {
+    width: 100%;
+    min-width: 200px; /* igual ao admin.css */
+    max-width: 300px;
   }
 }
