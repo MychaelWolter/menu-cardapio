@@ -106,3 +106,67 @@
     transform: translateY(0);
   }
 }
+
+/* ===== MODAL NO MODO ESCURO ===== */
+body.dark-mode .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+body.dark-mode .modal-container {
+  background: #2d2d2d;
+  color: #e0e0e0;
+  border: 2px solid #ff808c;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .modal-title {
+  color: #ff808c;
+}
+
+body.dark-mode .modal-message {
+  color: #cccccc;
+}
+
+/* Botões no modo escuro */
+body.dark-mode .modal-btn-confirm {
+  background: linear-gradient(145deg, #9c1c28, #7e1620);
+  color: white;
+  border: 1px solid #ff808c;
+}
+
+body.dark-mode .modal-btn-confirm:hover {
+  background: linear-gradient(145deg, #b22234, #9c1c28);
+}
+
+body.dark-mode .modal-btn-cancel {
+  background: linear-gradient(145deg, #555, #444);
+  color: #e0e0e0;
+  border: 1px solid #666;
+}
+
+body.dark-mode .modal-btn-cancel:hover {
+  background: linear-gradient(145deg, #666, #555);
+}
+
+body.dark-mode .modal-btn-ok {
+  background: linear-gradient(145deg, #9c1c28, #7e1620);
+  color: white;
+  border: 1px solid #ff808c;
+}
+
+body.dark-mode .modal-btn-ok:hover {
+  background: linear-gradient(145deg, #b22234, #9c1c28);
+}
+
+/* Tipos específicos de modal (para futuras expansões) */
+body.dark-mode .modal-success {
+  border-color: #28a745;
+}
+
+body.dark-mode .modal-error {
+  border-color: #dc3545;
+}
+
+body.dark-mode .modal-warning {
+  border-color: #ffc107;
+}

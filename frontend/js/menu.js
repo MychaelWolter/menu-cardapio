@@ -7,6 +7,40 @@ const currentTableSpan = document.getElementById("currentTable");
 const logoutBtn = document.getElementById("logoutBtn");
 const totalAmountSpan = document.getElementById("totalAmount");
 
+// ===== CONTROLE DE TEMA =====
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.querySelector(".theme-icon");
+
+// Verificar preferência salva ou do sistema
+function initTheme() {
+  const savedTheme = localStorage.getItem("theme");
+  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  
+  if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
+    document.body.classList.add("dark-mode");
+    themeIcon.textContent = "☀️";
+  } else {
+    document.body.classList.remove("dark-mode");
+    themeIcon.textContent = "🌙";
+  }
+}
+
+// Alternar tema
+themeToggle.addEventListener("click", () => {
+  if (document.body.classList.contains("dark-mode")) {
+    document.body.classList.remove("dark-mode");
+    themeIcon.textContent = "🌙";
+    localStorage.setItem("theme", "light");
+  } else {
+    document.body.classList.add("dark-mode");
+    themeIcon.textContent = "☀️";
+    localStorage.setItem("theme", "dark");
+  }
+});
+
+// Inicializar tema quando a página carregar
+document.addEventListener("DOMContentLoaded", initTheme);
+
 // Obter número da mesa do token
 let tableNumber;
 try {
