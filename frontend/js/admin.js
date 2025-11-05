@@ -12,7 +12,13 @@ const itemDesc = document.getElementById("itemDesc");
 const itemPrice = document.getElementById("itemPrice");
 const itemImage = document.getElementById("itemImage");
 
-let editingId = null; // 🔹 controla se estamos editando um item
+let editingId = null;
+
+// 🔹 CONFIGURAÇÃO DA URL DA API
+const API_BASE_URL = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ? 
+                     'http://localhost:5000' : 
+                     `http://${window.location.hostname}:5000`;
 
 logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("token");
@@ -81,15 +87,23 @@ addMenuBtn.addEventListener("click", async () => {
 
   try {
     if (editingId) {
-      // 🔹 Atualizando item existente
-      await fetch(`http://localhost:5000/api/menu/${editingId}`, {
+      // 🔹 CORREÇÃO: Usar API_BASE_URL dinâmica
+      const response = await fetch(`${API_BASE_URL}/api/menu/${editingId}`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem("token")}` 
+        },
         body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      const result = await response.json();
       showSuccess("Item atualizado com sucesso!");
     } else {
-      // 🔹 Criando novo item
+      // 🔹 Criando novo item (já usa apiPost que foi corrigido)
       await apiPost("/menu", formData, true);
       showSuccess("Item adicionado com sucesso!");
     }
@@ -98,7 +112,7 @@ addMenuBtn.addEventListener("click", async () => {
     loadMenu();
   } catch (err) {
     console.error("Erro ao salvar item:", err);
-    showError("Ocorreu um erro ao salvar o item.");
+    showError("Ocorreu um erro ao salvar o item: " + err.message);
   }
 });
 
@@ -108,13 +122,12 @@ function startEdit(id, name, description, price) {
   itemName.value = name;
   itemDesc.value = description;
   itemPrice.value = price;
-  itemImage.value = ""; // limpa a seleção anterior
+  itemImage.value = "";
 
   addMenuBtn.textContent = "Salvar Alterações";
   addMenuBtn.style.backgroundColor = "#7e1620";
   addMenuBtn.style.transition = "0.3s";
 
-  // Scroll até o formulário
   itemName.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -133,9 +146,27 @@ function clearForm() {
 async function deleteItem(id) {
   const confirmed = await showConfirm("Deseja deletar este item do cardápio?");
   if (!confirmed) return;
-  await apiDelete(`/menu/${id}`);
-  loadMenu();
-  clearForm();
+  
+  try {
+    // 🔹 CORREÇÃO: Usar URL dinâmica para DELETE também
+    const response = await fetch(`${API_BASE_URL}/api/menu/${id}`, {
+      method: "DELETE",
+      headers: { 
+        Authorization: `Bearer ${localStorage.getItem("token")}` 
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    loadMenu();
+    clearForm();
+    showSuccess("Item deletado com sucesso!");
+  } catch (err) {
+    console.error("Erro ao deletar item:", err);
+    showError("Erro ao deletar item: " + err.message);
+  }
 }
 
 // ==================== COMANDAS ====================
@@ -170,16 +201,64 @@ async function loadOrders() {
 
 async function updateOrderStatus(id, status) {
   if (!status) return;
-  await apiPut(`/orders/${id}`, { status });
-  loadOrders();
+  
+  try {
+    // 🔹 CORREÇÃO: Usar URL dinâmica para atualizar status
+    const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    await response.json();
+    loadOrders();
+    showSuccess("Status atualizado com sucesso!");
+  } catch (err) {
+    console.error("Erro ao atualizar status:", err);
+    showError("Erro ao atualizar status: " + err.message);
+  }
 }
 
 async function deleteOrder(id) {
   const confirmed = await showConfirm("Deseja deletar esta comanda?");
   if (!confirmed) return;
-  await apiDelete(`/orders/${id}`);
-  loadOrders();
+  
+  try {
+    // 🔹 CORREÇÃO: Usar URL dinâmica para deletar pedidos
+    const response = await fetch(`${API_BASE_URL}/api/orders/${id}`, {
+      method: "DELETE",
+      headers: { 
+        Authorization: `Bearer ${localStorage.getItem("token")}` 
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    loadOrders();
+    showSuccess("Comanda deletada com sucesso!");
+  } catch (err) {
+    console.error("Erro ao deletar comanda:", err);
+    showError("Erro ao deletar comanda: " + err.message);
+  }
+}
+
+// 🔹 Adicionar função de debug para testar
+function debugAPI() {
+  console.log('🔍 Debug Admin:');
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Hostname:', window.location.hostname);
+  console.log('Token:', localStorage.getItem('token') ? 'Presente' : 'Ausente');
 }
 
 // Inicializa a tela
 loadMenu();
+debugAPI(); // Para testar no console

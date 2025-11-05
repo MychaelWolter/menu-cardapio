@@ -767,3 +767,73 @@ body.dark-mode .order-quantity-badge {
   object-fit: cover;
   border-radius: 15px;
 }
+
+/* Adicione ao menu.css */
+
+/* Feedback de gestos e acessibilidade */
+.gesture-feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(156, 28, 40, 0.9);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  z-index: 10000;
+  animation: fadeOut 2s forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Indicador de modo de gestos ativo */
+.gesture-mode-indicator {
+  position: fixed;
+  top: 91%;
+  left: 10px;
+  background: #9c1c28;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+  display: none; /* Inicialmente oculto */
+}
+
+.gesture-mode-indicator.show {
+  display: block;
+  opacity: 1;
+}
+
+/* High contrast mode para melhor visibilidade */
+.high-contrast .menu-card,
+.high-contrast .order-card {
+  border: 3px solid #000 !important;
+}
+
+.high-contrast body {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+.high-contrast .menu-container {
+  background: #000 !important;
+  border: 3px solid #fff !important;
+}
+
+/* Feedback de toque para botões */
+.btn-primary:active,
+.btn-success:active,
+.btn-secondary:active {
+  transform: scale(0.95);
+  transition: transform 0.1s;
+}

@@ -385,3 +385,17 @@ function setupEventListeners() {
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener("DOMContentLoaded", initializePage);
+
+// ===== EXPORTAR FUNÇÕES PARA GESTOS =====
+// Tornar funções disponíveis globalmente para o sistema de gestos
+window.addItemToOrder = addItemToOrder;
+window.sendOrder = sendOrder;
+
+// Variáveis globais para gestos
+window.menuItems = menuItems;
+window.orderItems = orderItems;
+window.currentMenuIndex = currentMenuIndex;
+window.currentOrderIndex = currentOrderIndex;
+window.updateMenuCarousel = updateMenuCarousel;
+window.updateOrderCarousel = updateOrderCarousel;
+window.updateTotal = updateTotal;
