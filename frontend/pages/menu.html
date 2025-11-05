@@ -47,10 +47,19 @@
         </div>
 
         <h3>Pedido Atual:</h3>
-        <div class="order-summary">
-          <ul id="orderList"></ul>
-          <div class="order-total">
-            <strong>Total: R$ <span id="totalAmount">0.00</span></strong>
+        <div class="order-carousel-container">
+          <div class="menu-carousel order-carousel">
+            <button class="carousel-btn prev order-prev">⟨</button>
+            <div class="carousel-track" id="orderCarousel">
+              <!-- Cards do pedido serão inseridos aqui -->
+            </div>
+            <button class="carousel-btn next order-next">⟩</button>
+          </div>
+          
+          <div class="order-summary">
+            <div class="order-total">
+              <strong>Total: R$ <span id="totalAmount">0.00</span></strong>
+            </div>
           </div>
         </div>
 
