@@ -3,7 +3,6 @@
 class TouchGestureManager {
   constructor() {
     this.gestures = {
-      // Gestos definidos
       START_READING: "doubleTapTwoFingers",
       ADD_ITEM: "doubleTap",
       NAVIGATE_MENU: "swipeHorizontal",
@@ -20,79 +19,194 @@ class TouchGestureManager {
     this.longPressTimeout = null;
     this.isGestureMode = true;
 
+    // Variáveis de controle
+    this.lastGestureTime = 0;
+    this.gestureCooldown = 300;
+    this.isTwoFingerTouch = false;
+    this.isGestureInProgress = false;
+    this.startTouches = [];
+
+    this.ensureGlobalVariables();
     this.init();
+  }
+
+  ensureGlobalVariables() {
+    if (typeof menuItems === "undefined") {
+      window.menuItems = [];
+    }
+    if (typeof currentMenuIndex === "undefined") {
+      window.currentMenuIndex = 0;
+    }
+    if (typeof orderItems === "undefined") {
+      window.orderItems = [];
+    }
+    if (typeof currentOrderIndex === "undefined") {
+      window.currentOrderIndex = 0;
+    }
   }
 
   init() {
     this.setupEventListeners();
     this.showGestureModeIndicator();
-    this.announceInstructions();
+    setTimeout(() => {
+      this.announceInstructions();
+    }, 1000);
   }
 
   setupEventListeners() {
-    document.addEventListener("touchstart", this.handleTouchStart.bind(this));
-    document.addEventListener("touchend", this.handleTouchEnd.bind(this));
-    document.addEventListener("touchmove", this.handleTouchMove.bind(this));
+    // Usar passive: true para melhor performance, exceto onde precisamos preventDefault()
+    document.addEventListener("touchstart", this.handleTouchStart.bind(this), {
+      passive: true,
+    });
+    document.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+      passive: true,
+    });
+    document.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+      passive: false,
+    });
+    document.addEventListener("touchcancel", this.handleTouchCancel.bind(this));
 
-    // Também adicionar suporte a teclado para fallback
     document.addEventListener("keydown", this.handleKeyPress.bind(this));
+    this.preventZoom();
+  }
+
+  preventZoom() {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      );
+    }
+
+    document.addEventListener("gesturestart", (e) => e.preventDefault());
+    document.addEventListener("gesturechange", (e) => e.preventDefault());
+    document.addEventListener("gestureend", (e) => e.preventDefault());
   }
 
   handleTouchStart(event) {
     if (!this.isGestureMode) return;
 
+    const currentTime = Date.now();
+
+    // Cooldown entre gestos
+    if (currentTime - this.lastGestureTime < this.gestureCooldown) {
+      return;
+    }
+
+    // Salvar informações dos toques iniciais
+    this.startTouches = Array.from(event.touches).map((touch) => ({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      identifier: touch.identifier,
+    }));
+
     const touch = event.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
-    this.lastTouchTime = Date.now();
+    this.lastTouchTime = currentTime;
 
-    // Iniciar detecção de long press
+    // Detectar dois dedos
+    if (event.touches.length === 2) {
+      this.isTwoFingerTouch = true;
+      this.twoFingerStartTime = currentTime;
+    }
+
+    // Iniciar long press
     this.longPressTimeout = setTimeout(() => {
-      this.executeGesture(this.gestures.DELETE_ITEM);
-    }, 1000);
+      if (this.isGestureMode && !this.isGestureInProgress) {
+        this.isGestureInProgress = true;
+        this.executeGesture(this.gestures.DELETE_ITEM);
+        this.lastGestureTime = Date.now();
+      }
+    }, 800);
   }
 
   handleTouchEnd(event) {
     if (!this.isGestureMode) return;
 
+    const currentTime = Date.now();
     clearTimeout(this.longPressTimeout);
+
+    // Cooldown entre gestos
+    if (currentTime - this.lastGestureTime < this.gestureCooldown) {
+      return;
+    }
 
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - this.touchStartX;
     const deltaY = touch.clientY - this.touchStartY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Se foi um tap (movimento mínimo) e não há gesto em progresso
+    if (distance < 20 && !this.isGestureInProgress) {
+      this.handleTap(event);
+    }
+
+    this.isGestureInProgress = false;
+    this.isTwoFingerTouch = false;
+    this.lastGestureTime = currentTime;
+  }
+
+  handleTap(event) {
     const currentTime = Date.now();
-    const timeDiff = currentTime - this.lastTouchTime;
+    const timeSinceLastTap = currentTime - this.lastTouchTime;
 
-    // Detectar número de toques
-    if (event.touches.length === 0) {
-      this.tapCount++;
+    // Reset tap count se passou muito tempo
+    if (timeSinceLastTap > 500) {
+      this.tapCount = 0;
+    }
 
-      if (this.tapCount === 1) {
-        this.tapTimeout = setTimeout(() => {
-          // Single tap - navegação básica
-          if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-            this.speakCurrentElement();
-          }
-          this.tapCount = 0;
-        }, 300);
-      } else if (this.tapCount === 2) {
-        clearTimeout(this.tapTimeout);
-        if (timeDiff < 500) {
+    this.tapCount++;
+    this.lastTouchTime = currentTime;
+
+    // Clear previous timeout
+    if (this.tapTimeout) {
+      clearTimeout(this.tapTimeout);
+    }
+
+    // Aguardar por mais toques
+    this.tapTimeout = setTimeout(() => {
+      this.processTapSequence();
+    }, 300);
+  }
+
+  processTapSequence() {
+    console.log(`🔹 Processando ${this.tapCount} toque(s)`);
+
+    switch (this.tapCount) {
+      case 1:
+        this.speakCurrentElement();
+        break;
+
+      case 2:
+        if (this.isTwoFingerTouch) {
+          console.log("🎧 Double tap com DOIS dedos - INICIAR LEITURA");
+          this.executeGesture(this.gestures.START_READING);
+        } else {
+          console.log("➕ Double tap com UM dedo - ADICIONAR ITEM");
           this.executeGesture(this.gestures.ADD_ITEM);
         }
-        this.tapCount = 0;
-      } else if (this.tapCount === 3) {
-        clearTimeout(this.tapTimeout);
-        if (timeDiff < 800) {
-          this.executeGesture(this.gestures.CONFIRM_ORDER);
-        }
-        this.tapCount = 0;
-      }
+        break;
+
+      case 3:
+        console.log("✅ Triple tap - CONFIRMAR PEDIDO");
+        this.executeGesture(this.gestures.CONFIRM_ORDER);
+        break;
     }
+
+    this.tapCount = 0;
   }
 
   handleTouchMove(event) {
-    if (!this.isGestureMode) return;
+    if (!this.isGestureMode || this.isGestureInProgress) return;
+
+    const currentTime = Date.now();
+
+    // Cooldown entre gestos
+    if (currentTime - this.lastGestureTime < this.gestureCooldown) {
+      return;
+    }
 
     clearTimeout(this.longPressTimeout);
 
@@ -101,114 +215,129 @@ class TouchGestureManager {
       const deltaX = touch.clientX - this.touchStartX;
       const deltaY = touch.clientY - this.touchStartY;
 
-      // Detectar swipe horizontal (navegação do cardápio)
-      if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 30) {
+      // Threshold para detecção de swipe
+      const swipeThreshold = 60;
+
+      // Detectar swipe horizontal
+      if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaY) < 40) {
+        this.isGestureInProgress = true;
         if (deltaX > 0) {
+          console.log("➡️ Swipe direito - NAVEGAR DIREITA");
           this.executeGesture(this.gestures.NAVIGATE_MENU, "right");
         } else {
+          console.log("⬅️ Swipe esquerdo - NAVEGAR ESQUERDA");
           this.executeGesture(this.gestures.NAVIGATE_MENU, "left");
         }
+        this.lastGestureTime = currentTime;
         event.preventDefault();
+        return;
       }
 
-      // Detectar swipe vertical (ajuda)
-      if (Math.abs(deltaY) > 50 && Math.abs(deltaX) < 30) {
+      // Detectar swipe vertical para cima
+      if (Math.abs(deltaY) > swipeThreshold && Math.abs(deltaX) < 40) {
+        this.isGestureInProgress = true;
         if (deltaY < 0) {
+          console.log("⬆️ Swipe para cima - AJUDA");
           this.executeGesture(this.gestures.HELP);
+          this.lastGestureTime = currentTime;
+          event.preventDefault();
+          return;
         }
       }
     }
+  }
 
-    // Swipe com dois dedos - iniciar leitura
-    if (event.touches.length === 2) {
-      const currentTime = Date.now();
-      if (currentTime - this.lastTouchTime < 300) {
+  handleTouchCancel() {
+    clearTimeout(this.longPressTimeout);
+    clearTimeout(this.tapTimeout);
+    this.isTwoFingerTouch = false;
+    this.tapCount = 0;
+    this.isGestureInProgress = false;
+  }
+
+  handleKeyPress(event) {
+    const activeElement = document.activeElement;
+    const isInputFocused =
+      activeElement.tagName === "INPUT" ||
+      activeElement.tagName === "TEXTAREA" ||
+      activeElement.tagName === "SELECT";
+
+    if (isInputFocused) return;
+
+    switch (event.key) {
+      case "1":
+        event.preventDefault();
         this.executeGesture(this.gestures.START_READING);
-      }
+        break;
+      case "2":
+        event.preventDefault();
+        this.clearInputs();
+        break;
+      case "3":
+        event.preventDefault();
+        this.executeGesture(this.gestures.DELETE_ITEM);
+        break;
+      case "4":
+        event.preventDefault();
+        this.executeGesture(this.gestures.CONFIRM_ORDER);
+        break;
+      case "ArrowRight":
+        event.preventDefault();
+        this.executeGesture(this.gestures.NAVIGATE_MENU, "right");
+        break;
+      case "ArrowLeft":
+        event.preventDefault();
+        this.executeGesture(this.gestures.NAVIGATE_MENU, "left");
+        break;
+      case "h":
+      case "H":
+        event.preventDefault();
+        this.executeGesture(this.gestures.HELP);
+        break;
+      case "Escape":
+        event.preventDefault();
+        this.toggleGestureMode();
+        break;
     }
   }
 
-handleKeyPress(event) {
-  // IMPORTANTE: Não processar gestos se o usuário está digitando em inputs
-  const activeElement = document.activeElement;
-  const isInputFocused = activeElement.tagName === 'INPUT' || 
-                         activeElement.tagName === 'TEXTAREA' || 
-                         activeElement.tagName === 'SELECT';
-  
-  if (isInputFocused) {
-    return; // Deixa o usuário digitar normalmente nos inputs
-  }
+  clearInputs() {
+    const itemIdInput = document.getElementById("itemId");
+    const quantityInput = document.getElementById("quantity");
 
-  // Apenas processar gestos de teclado quando nenhum input está focado
-  switch(event.key) {
-    case '1':
-      event.preventDefault();
-      this.executeGesture(this.gestures.START_READING);
-      break;
-    case '2':
-      event.preventDefault();
-      this.clearInputs(); // Nova função para limpar inputs
-      break;
-    case '3':
-      event.preventDefault();
-      this.executeGesture(this.gestures.DELETE_ITEM);
-      break;
-    case '4':
-      event.preventDefault();
-      this.executeGesture(this.gestures.CONFIRM_ORDER);
-      break;
-    case 'ArrowRight':
-      event.preventDefault();
-      this.executeGesture(this.gestures.NAVIGATE_MENU, 'right');
-      break;
-    case 'ArrowLeft':
-      event.preventDefault();
-      this.executeGesture(this.gestures.NAVIGATE_MENU, 'left');
-      break;
-    case 'h':
-      event.preventDefault();
-      this.executeGesture(this.gestures.HELP);
-      break;
+    if (itemIdInput && quantityInput) {
+      itemIdInput.value = "";
+      quantityInput.value = "1";
+      itemIdInput.focus();
+      this.speak("Campos limpos. Pronto para novo item.");
+    }
   }
-}
-
-// Adicione esta nova função ao gestures.js
-clearInputs() {
-  const itemIdInput = document.getElementById('itemId');
-  const quantityInput = document.getElementById('quantity');
-  
-  if (itemIdInput && quantityInput) {
-    itemIdInput.value = '';
-    quantityInput.value = '';
-    itemIdInput.focus();
-    this.speak('Campos limpos. Pronto para novo item.');
-  }
-}
 
   executeGesture(gestureType, direction = null) {
+    if (!this.isGestureMode) {
+      console.log("❌ Modo gestos desativado");
+      return;
+    }
+
+    console.log(`🎯 EXECUTANDO GESTO: ${gestureType}`, direction);
     this.showGestureFeedback(gestureType, direction);
 
     switch (gestureType) {
       case this.gestures.START_READING:
         this.announceInstructions();
         break;
-
       case this.gestures.ADD_ITEM:
         this.addCurrentItemToOrder();
         break;
-
       case this.gestures.NAVIGATE_MENU:
         this.navigateMenu(direction);
         break;
-
       case this.gestures.DELETE_ITEM:
         this.deleteCurrentOrderItem();
         break;
-
       case this.gestures.CONFIRM_ORDER:
         this.confirmOrder();
         break;
-
       case this.gestures.HELP:
         this.showHelp();
         break;
@@ -227,41 +356,47 @@ clearInputs() {
       [this.gestures.HELP]: "❓ Ajuda",
     };
 
-    this.showTemporaryIndicator(messages[gestureType]);
-    this.speak(messages[gestureType]);
+    const message = messages[gestureType] || "Gesto executado";
+    this.showTemporaryIndicator(message);
+    this.speak(message);
   }
 
   showGestureModeIndicator() {
-    // Remover indicador anterior se existir
-    const existingIndicator = document.getElementById("gestureIndicator");
-    if (existingIndicator) {
-      existingIndicator.remove();
+    let indicator = document.getElementById("gestureIndicator");
+
+    if (!indicator) {
+      indicator = document.createElement("div");
+      indicator.id = "gestureIndicator";
+      indicator.className = "gesture-indicator";
+      document.body.appendChild(indicator);
     }
 
-    const indicator = document.createElement("div");
-    indicator.className = "gesture-mode-indicator";
-    indicator.textContent = "👆 Modo Gestos Ativo";
-    indicator.id = "gestureIndicator";
+    indicator.textContent = this.isGestureMode
+      ? "👆 Gestos Ativo"
+      : "👆 Gestos Inativo";
+    indicator.style.background = this.isGestureMode ? "#9c1c28" : "#95a5a6";
     indicator.style.display = "block";
-    document.body.appendChild(indicator);
 
-    // Ocultar após 2 segundos
+    // Ocultar após 3 segundos
     setTimeout(() => {
-      indicator.style.display = "none";
-    }, 2000);
+      if (indicator.textContent.includes("Gestos")) {
+        indicator.style.display = "none";
+      }
+    }, 3000);
   }
 
   showTemporaryIndicator(message, duration = 2000) {
+    this.showGestureModeIndicator();
     const indicator = document.getElementById("gestureIndicator");
 
     if (indicator) {
       indicator.textContent = message;
-      indicator.style.background = this.isGestureMode ? "#9c1c28" : "#95a5a6";
       indicator.style.display = "block";
 
-      // Ocultar após o tempo especificado
       setTimeout(() => {
-        indicator.style.display = "none";
+        if (indicator.textContent === message) {
+          indicator.style.display = "none";
+        }
       }, duration);
     }
   }
@@ -269,103 +404,111 @@ clearInputs() {
   // ===== AÇÕES DOS GESTOS =====
 
   announceInstructions() {
-    const instructions = `
-      Bem-vindo ao TalkMenu. Modo de gestos ativado.
-      Gestos disponíveis: 
-      Dois toques com dois dedos para ouvir instruções.
-      Dois toques rápidos com um dedo para adicionar item.
-      Arraste para direita ou esquerda para navegar no cardápio.
-      Pressione e segure para excluir item.
-      Três toques rápidos para enviar pedido.
-      Arraste para cima para ajuda.
-      Pressione 1, 2, 3, 4 no teclado para alternar entre funções.
-    `;
-
+    const instructions = `Modo gestos ativo. Toque duplo com um dedo para adicionar item, arraste para os lados para navegar, toque longo para remover.`;
     this.speak(instructions);
   }
 
   addCurrentItemToOrder() {
-    if (window.addItemToOrder && menuItems && menuItems[currentMenuIndex]) {
-      const currentItem = menuItems[currentMenuIndex];
-      const itemIdInput = document.getElementById("itemId");
-      const quantityInput = document.getElementById("quantity");
+    console.log("📦 Tentando adicionar item ao pedido...");
 
-      if (itemIdInput && quantityInput) {
-        itemIdInput.value = currentMenuIndex + 1;
-        quantityInput.value = 1;
+    if (window.menuItems && window.menuItems.length > 0) {
+      const currentItem = window.menuItems[window.currentMenuIndex];
+
+      // Simular adição se a função não existir
+      if (typeof window.addItemToOrder === "function") {
         window.addItemToOrder();
-        this.speak(`Item ${currentItem.name} adicionado ao pedido`);
+      } else {
+        // Fallback
+        if (!window.orderItems) window.orderItems = [];
+        const newItem = {
+          ...currentItem,
+          id: Date.now(),
+          quantity: 1,
+        };
+        window.orderItems.push(newItem);
+        console.log("✅ Item adicionado:", newItem);
       }
+
+      this.speak(`Item ${currentItem.name} adicionado ao pedido`);
     } else {
-      this.speak("Função de adicionar item não disponível no momento");
+      this.speak("Nenhum item disponível no cardápio");
     }
   }
 
   navigateMenu(direction) {
+    if (!window.menuItems || window.menuItems.length === 0) {
+      this.speak("Nenhum item no cardápio");
+      return;
+    }
+
+    const oldIndex = window.currentMenuIndex;
+
     if (direction === "right") {
-      // Próximo item
-      currentMenuIndex = (currentMenuIndex + 1) % menuItems.length;
+      window.currentMenuIndex =
+        (window.currentMenuIndex + 1) % window.menuItems.length;
     } else {
-      // Item anterior
-      currentMenuIndex =
-        (currentMenuIndex - 1 + menuItems.length) % menuItems.length;
+      window.currentMenuIndex =
+        (window.currentMenuIndex - 1 + window.menuItems.length) %
+        window.menuItems.length;
     }
 
-    updateMenuCarousel();
+    console.log(`📱 Navegando de ${oldIndex} para ${window.currentMenuIndex}`);
 
-    const currentItem = menuItems[currentMenuIndex];
-    if (currentItem) {
-      this.speak(
-        `${currentMenuIndex + 1}. ${currentItem.name}. ${
-          currentItem.description
-        }. Preço: R$ ${currentItem.price.toFixed(2)}`
-      );
+    // Atualizar UI se a função existir
+    if (typeof window.updateMenuCarousel === "function") {
+      window.updateMenuCarousel();
     }
+
+    const currentItem = window.menuItems[window.currentMenuIndex];
+    this.speak(
+      `${currentItem.name}. ${
+        currentItem.description
+      }. R$ ${currentItem.price.toFixed(2)}`
+    );
   }
 
   deleteCurrentOrderItem() {
-    if (orderItems.length > 0 && currentOrderIndex < orderItems.length) {
-      const deletedItem = orderItems[currentOrderIndex];
-      orderItems.splice(currentOrderIndex, 1);
+    console.log("🗑️ Tentando remover item...");
 
-      if (currentOrderIndex >= orderItems.length && orderItems.length > 0) {
-        currentOrderIndex = orderItems.length - 1;
-      } else if (orderItems.length === 0) {
-        currentOrderIndex = 0;
-      }
+    if (window.orderItems && window.orderItems.length > 0) {
+      const deletedItem = window.orderItems[window.currentOrderIndex];
+      window.orderItems.splice(window.currentOrderIndex, 1);
 
-      updateOrderCarousel();
-      updateTotal();
+      // Atualizar UI se as funções existirem
+      if (typeof window.updateOrderCarousel === "function")
+        window.updateOrderCarousel();
+      if (typeof window.updateTotal === "function") window.updateTotal();
 
-      this.speak(`Item ${deletedItem.name} removido do pedido`);
+      this.speak(`Item ${deletedItem.name} removido`);
+      console.log("✅ Item removido. Pedido atual:", window.orderItems);
     } else {
       this.speak("Nenhum item para remover");
     }
   }
 
   confirmOrder() {
-    if (window.sendOrder && orderItems.length > 0) {
-      window.sendOrder();
-      this.speak("Pedido enviado com sucesso!");
+    console.log("📤 Confirmando pedido...");
+
+    if (window.orderItems && window.orderItems.length > 0) {
+      if (typeof window.sendOrder === "function") {
+        window.sendOrder();
+      } else {
+        // Simular confirmação
+        console.log("🎉 Pedido confirmado:", window.orderItems);
+        window.orderItems = [];
+      }
+      this.speak("Pedido confirmado com sucesso!");
     } else {
-      this.speak("Nenhum item no pedido para enviar");
+      this.speak("Adicione itens antes de confirmar o pedido");
     }
   }
 
   showHelp() {
     const helpMessage = `
-      Ajuda do TalkMenu:
-      Você está na tela de cardápio. 
-      Use os gestos para navegar e fazer pedidos.
-      Cardápio atual tem ${menuItems ? menuItems.length : 0} itens.
-      Pedido atual tem ${orderItems ? orderItems.length : 0} itens.
-      Total: R$ ${
-        document.getElementById("totalAmount")
-          ? document.getElementById("totalAmount").textContent
-          : "0.00"
-      }
+      Ajuda: Cardápio com ${window.menuItems?.length || 0} itens. 
+      Pedido com ${window.orderItems?.length || 0} itens.
+      Modo gestos ${this.isGestureMode ? "ativo" : "inativo"}.
     `;
-
     this.speak(helpMessage);
   }
 
@@ -375,105 +518,144 @@ clearInputs() {
       utterance.lang = "pt-BR";
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
-
-      // Parar fala anterior
       speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
     }
+    console.log("🔊 Falando:", text);
   }
 
   speakCurrentElement() {
     const activeElement = document.activeElement;
-    if (activeElement && activeElement.textContent) {
-      this.speak(activeElement.textContent);
-    }
+    const text =
+      activeElement?.textContent || activeElement?.value || "Elemento atual";
+    this.speak(text);
   }
 
-  // Método para alternar modo de gestos
   toggleGestureMode() {
     this.isGestureMode = !this.isGestureMode;
-    const indicator = document.getElementById("gestureIndicator");
-
-    if (indicator) {
-      indicator.textContent = this.isGestureMode
-        ? "👆 Modo Gestos Ativo"
-        : "👆 Modo Gestos Inativo";
-      indicator.style.background = this.isGestureMode ? "#9c1c28" : "#95a5a6";
-      indicator.style.display = "block";
-
-      // Ocultar após 2 segundos
-      setTimeout(() => {
-        indicator.style.display = "none";
-      }, 2000);
-    }
-
+    this.showGestureModeIndicator();
     this.speak(
       this.isGestureMode ? "Modo gestos ativado" : "Modo gestos desativado"
     );
+
+    // Atualizar botão
+    const button = document.querySelector(".gesture-toggle-button");
+    if (button) {
+      button.style.background = this.isGestureMode ? "#9c1c28" : "#95a5a6";
+      button.textContent = this.isGestureMode ? "👆 Gestos" : "👆 Normal";
+    }
   }
 }
 
-// Inicializar gerenciador de gestos quando a página carregar
+// Inicialização
 let gestureManager;
 
 document.addEventListener("DOMContentLoaded", function () {
   gestureManager = new TouchGestureManager();
+  createGestureToggleButton();
+  addGestureStyles();
+});
 
-  // Adicionar botão para alternar modo de gestos
-  const toggleButton = document.createElement("button");
-  toggleButton.textContent = "👆 Gestos";
-  toggleButton.style.position = "fixed";
-  toggleButton.style.bottom = "3%";
-  toggleButton.style.right = "2%";
-  toggleButton.style.zIndex = "1000";
-  toggleButton.style.padding = "8px 15px 10px";
-  toggleButton.style.borderRadius = "30px";
-  toggleButton.style.background = "#9c1c28";
-  toggleButton.style.color = "white";
-  toggleButton.style.border = "none";
-  toggleButton.style.cursor = "pointer";
-  toggleButton.style.fontSize = "0.8rem";
-  toggleButton.style.fontWeight = "bold";
-  toggleButton.style.boxShadow = "0 2px 10px rgba(0,0,0,0.3)";
+function createGestureToggleButton() {
+  if (document.querySelector(".gesture-toggle-button")) return;
 
-  toggleButton.addEventListener("click", () => {
+  const button = document.createElement("button");
+  button.className = "gesture-toggle-button";
+  button.innerHTML = "👆 Gestos";
+  button.setAttribute("aria-label", "Alternar modo de gestos");
+
+  // BOTÃO PEQUENO NA DIREITA
+  button.style.cssText = `
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    z-index: 10000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #9c1c28;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    min-width: 80px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
+  `;
+
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
     gestureManager.toggleGestureMode();
   });
 
-  // Mostrar instrução temporária ao interagir com o botão
-  toggleButton.addEventListener("mouseenter", () => {
-    gestureManager.showTemporaryIndicator(
-      "Clique para alternar modo de gestos",
-      3000
-    );
+  button.addEventListener("touchstart", (e) => {
+    e.stopPropagation(); // Não interferir com os gestos
   });
 
-  toggleButton.addEventListener("touchstart", () => {
-    gestureManager.showTemporaryIndicator(
-      "Clique para alternar modo de gestos",
-      3000
-    );
-  });
+  document.body.appendChild(button);
+}
 
-  document.body.appendChild(toggleButton);
+function addGestureStyles() {
+  if (document.getElementById("gesture-styles")) return;
 
-  // Adicionar estilo CSS dinamicamente para o indicador
-  const style = document.createElement("style");
-  style.textContent = `
-    .gesture-mode-indicator {
+  const styles = `
+    .gesture-indicator {
       position: fixed;
-      top: 91%;
-      left: 10px;
+      bottom: 15px;
+      left: 15px;
       background: #9c1c28;
       color: white;
-      padding: 0.5rem 1rem;
+      padding: 8px 16px;
       border-radius: 20px;
-      font-size: 0.7rem;
+      font-size: 12px;
       font-weight: bold;
       z-index: 9999;
-      transition: opacity 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      text-align: center;
+      min-width: 80px;
       display: none;
+      transition: all 0.3s ease;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .gesture-toggle-button {
+      /* Estilo definido inline para consistência */
+    }
+    
+    .gesture-toggle-button:hover {
+      transform: scale(1.05);
+      background: #7a1620 !important;
+    }
+    
+    .gesture-toggle-button:active {
+      transform: scale(0.95);
+    }
+
+    .gesture-indicator {
+      animation: fadeInOut 0.3s ease;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
   `;
-  document.head.appendChild(style);
-});
+
+  const styleSheet = document.createElement("style");
+  styleSheet.id = "gesture-styles";
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
+// Exportar para uso global
+window.TouchGestureManager = TouchGestureManager;
