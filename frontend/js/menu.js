@@ -197,7 +197,7 @@ function updateOrderCarousel() {
       <p class="order-quantity">Quantidade: ${item.quantity}</p>
       <p class="order-price">R$ ${item.price.toFixed(2)} cada</p>
       <p class="order-subtotal">Subtotal: R$ ${subtotal.toFixed(2)}</p>
-    `;
+      `;
     carousel.appendChild(card);
   });
 
@@ -269,14 +269,24 @@ function addItemToOrder() {
     return;
   }
 
-  // Adicionar item ao pedido
+  // Adicionar item ao pedido (COMPORTAMENTO ACUMULATIVO)
   const menuItem = menuItems[id];
-  orderItems.push({
-    menuItem: menuItem._id,
-    quantity,
-    name: menuItem.name,
-    price: menuItem.price,
-  });
+  const existingItemIndex = orderItems.findIndex(
+    (item) => item.menuItem === menuItem._id
+  );
+
+  if (existingItemIndex !== -1) {
+    // Item já existe no pedido - somar quantidade
+    orderItems[existingItemIndex].quantity += quantity;
+  } else {
+    // Item novo - adicionar ao pedido
+    orderItems.push({
+      menuItem: menuItem._id,
+      quantity,
+      name: menuItem.name,
+      price: menuItem.price,
+    });
+  }
 
   // Atualizar interface
   updateOrderCarousel();
@@ -387,9 +397,9 @@ function setupEventListeners() {
 document.addEventListener("DOMContentLoaded", initializePage);
 
 // ===== EXPORTAR FUNÇÕES PARA GESTOS =====
-// Tornar funções disponíveis globalmente para o sistema de gestos
 window.addItemToOrder = addItemToOrder;
 window.sendOrder = sendOrder;
+window.clearOrder = clearOrder; // ← ADICIONE ESTA LINHA
 
 // Variáveis globais para gestos
 window.menuItems = menuItems;
