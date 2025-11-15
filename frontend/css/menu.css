@@ -837,3 +837,13 @@ body.dark-mode .order-quantity-badge {
   transform: scale(0.95);
   transition: transform 0.1s;
 }
+
+/* Habilitar swipes horizontais para Hammer.js funcionar */
+html, body {
+    touch-action: manipulation;
+    overscroll-behavior: none;
+}
+.menu-carousel,
+.order-carousel {
+    touch-action: pan-y !important; /* permite swipe horizontal sem scroll travar */
+}

@@ -178,7 +178,6 @@ function updateOrderCarousel() {
     const card = document.createElement("div");
     card.classList.add("order-card");
 
-    // Buscar a imagem original do item no cardápio
     const menuItem = menuItems.find(
       (menuItem) => menuItem._id === item.menuItem
     );
@@ -202,33 +201,6 @@ function updateOrderCarousel() {
   });
 
   updateOrderCarouselNavigation();
-}
-
-function getItemIcon(itemName) {
-  const name = itemName.toLowerCase();
-  if (
-    name.includes("bebida") ||
-    name.includes("suco") ||
-    name.includes("refri")
-  )
-    return "🥤";
-  if (
-    name.includes("prato") ||
-    name.includes("comida") ||
-    name.includes("arroz")
-  )
-    return "🍽️";
-  if (
-    name.includes("sobremesa") ||
-    name.includes("doce") ||
-    name.includes("bolo")
-  )
-    return "🍰";
-  if (name.includes("café") || name.includes("cafe")) return "☕";
-  if (name.includes("salada")) return "🥗";
-  if (name.includes("hambúrguer") || name.includes("burger")) return "🍔";
-  if (name.includes("pizza")) return "🍕";
-  return "📦";
 }
 
 function updateOrderCarouselNavigation() {
@@ -258,7 +230,6 @@ function addItemToOrder() {
   const id = parseInt(itemIdInput.value) - 1;
   const quantity = parseInt(quantityInput.value);
 
-  // Validação
   if (isNaN(id) || isNaN(quantity) || quantity < 1) {
     showAlert("Por favor, insira valores válidos para ID e quantidade.");
     return;
@@ -269,17 +240,14 @@ function addItemToOrder() {
     return;
   }
 
-  // Adicionar item ao pedido (COMPORTAMENTO ACUMULATIVO)
   const menuItem = menuItems[id];
   const existingItemIndex = orderItems.findIndex(
     (item) => item.menuItem === menuItem._id
   );
 
   if (existingItemIndex !== -1) {
-    // Item já existe no pedido - somar quantidade
     orderItems[existingItemIndex].quantity += quantity;
   } else {
-    // Item novo - adicionar ao pedido
     orderItems.push({
       menuItem: menuItem._id,
       quantity,
@@ -288,11 +256,9 @@ function addItemToOrder() {
     });
   }
 
-  // Atualizar interface
   updateOrderCarousel();
   updateTotal();
 
-  // Limpar campos
   itemIdInput.value = "";
   quantityInput.value = "";
   itemIdInput.focus();
@@ -336,7 +302,6 @@ function updateTotal() {
 
   totalAmountSpan.textContent = total.toFixed(2);
 
-  // Resetar índice do carrossel se não há itens
   if (orderItems.length === 0) {
     currentOrderIndex = 0;
   }
@@ -344,7 +309,6 @@ function updateTotal() {
 
 // ===== CONFIGURAÇÃO DE EVENT LISTENERS =====
 function setupEventListeners() {
-  // Navegação do carrossel do pedido
   document.addEventListener("click", (event) => {
     if (
       event.target.classList.contains("order-next") ||
@@ -368,18 +332,15 @@ function setupEventListeners() {
     }
   });
 
-  // Botões principais
   addItemBtn.addEventListener("click", addItemToOrder);
   clearOrderBtn.addEventListener("click", clearOrder);
   sendOrderBtn.addEventListener("click", sendOrder);
 
-  // Logout
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("token");
     window.location.href = "../index.html";
   });
 
-  // Enter nos campos de input
   document.getElementById("itemId").addEventListener("keypress", (event) => {
     if (event.key === "Enter") {
       document.getElementById("quantity").focus();
@@ -396,16 +357,129 @@ function setupEventListeners() {
 // ===== INICIALIZAÇÃO =====
 document.addEventListener("DOMContentLoaded", initializePage);
 
-// ===== EXPORTAR FUNÇÕES PARA GESTOS =====
+// ============================================================
+// ===== EXPORTAR FUNÇÕES PARA O SISTEMA DE GESTOS (SEGURO) ====
+// ============================================================
+
 window.addItemToOrder = addItemToOrder;
 window.sendOrder = sendOrder;
-window.clearOrder = clearOrder; // ← ADICIONE ESTA LINHA
+window.clearOrder = clearOrder;
 
-// Variáveis globais para gestos
-window.menuItems = menuItems;
-window.orderItems = orderItems;
-window.currentMenuIndex = currentMenuIndex;
-window.currentOrderIndex = currentOrderIndex;
+// Expor atualizações
 window.updateMenuCarousel = updateMenuCarousel;
 window.updateOrderCarousel = updateOrderCarousel;
 window.updateTotal = updateTotal;
+
+// Alternar carrossel para gestos
+window.setActiveCarousel = function (name) {
+  if (name === "menu") {
+    updateMenuCarousel();
+  } else {
+    updateOrderCarousel();
+  }
+};
+
+// Remover item atual (para gestures.js)
+window.deleteCurrentOrderItem = function () {
+  if (orderItems.length > 0) {
+    const removed = orderItems.splice(currentOrderIndex, 1);
+
+    updateOrderCarousel();
+    updateTotal();
+
+    if (removed[0]) {
+      const u = new SpeechSynthesisUtterance(
+        `Item ${removed[0].name} removido do pedido`
+      );
+      u.lang = "pt-BR";
+      speechSynthesis.speak(u);
+    }
+  } else {
+    const u = new SpeechSynthesisUtterance("Nenhum item para remover");
+    u.lang = "pt-BR";
+    speechSynthesis.speak(u);
+  }
+};
+
+window.addItemFromGesture = function () {
+  const id = currentMenuIndex;        // item atual do cardápio
+  const quantity = 1;                 // sempre 1 unidade para gestos
+
+  const menuItem = menuItems[id];
+  if (!menuItem) {
+    console.warn("Item inválido no gesto.");
+    return;
+  }
+
+  // Verifica se já existe no pedido
+  const existingItemIndex = orderItems.findIndex(
+    (item) => item.menuItem === menuItem._id
+  );
+
+  if (existingItemIndex !== -1) {
+    // soma +1
+    orderItems[existingItemIndex].quantity += 1;
+  } else {
+    // adiciona novo item
+    orderItems.push({
+      menuItem: menuItem._id,
+      quantity: 1,
+      name: menuItem.name,
+      price: menuItem.price,
+    });
+  }
+
+  // Atualiza UI
+  updateOrderCarousel();
+  updateTotal();
+
+  // Fala para o usuário
+  const u = new SpeechSynthesisUtterance(
+    `${menuItem.name} adicionado, quantidade 1`
+  );
+  u.lang = "pt-BR";
+  speechSynthesis.speak(u);
+};
+
+// ============================================================
+// =====  GETTERS / SETTERS SEGUROS PARA GESTURE.JS  ==========
+// ============================================================
+
+Object.defineProperty(window, "currentMenuIndex", {
+  get() {
+    return currentMenuIndex;
+  },
+  set(v) {
+    currentMenuIndex = v;
+  },
+});
+
+Object.defineProperty(window, "currentOrderIndex", {
+  get() {
+    return currentOrderIndex;
+  },
+  set(v) {
+    currentOrderIndex = v;
+  },
+});
+
+Object.defineProperty(window, "menuItems", {
+  get() {
+    return menuItems;
+  },
+});
+
+Object.defineProperty(window, "orderItems", {
+  get() {
+    return orderItems;
+  },
+});
+
+// Utilitários opcionais para sincronizar interface
+window.forceMenuUpdate = function () {
+  updateMenuCarousel();
+};
+
+window.forceOrderUpdate = function () {
+  updateOrderCarousel();
+};
