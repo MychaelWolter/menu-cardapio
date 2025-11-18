@@ -1,23 +1,14 @@
 // =======================================================
 //  SISTEMA DE GESTOS PARA ACESSIBILIDADE - TALKMENU
 //  Totalmente refeito usando Hammer.js
-//  Sem conflitos de double/triple tap
-//  Alternância global entre carrosséis com scroll automático
 // =======================================================
 
 class GestureController {
   constructor() {
     this.activeCarousel = "menu"; // 'menu' ou 'order'
-
-    // evita conflitos entre double/triple tap
-    this.blockDoubleTap1 = false;
-    this.blockDoubleTap2 = false;
-
     this.init();
   }
 
-  // --------------------------------------
-  // Inicialização
   // --------------------------------------
   init() {
     this.menuCarousel = document.getElementById("menuCarousel");
@@ -31,99 +22,106 @@ class GestureController {
   }
 
   // =========================================================================
-  // CONFIGURAÇÃO GERAL DO HAMMER
+  // HAMMER — incluindo swipe vertical para centralizar seções
   // =========================================================================
 
   setupHammer() {
     this.hamm = new Hammer.Manager(document.body);
     this.hamm.set({ enable: true });
-    this.hamm.add(new Hammer.Press({ time: 600 }));
 
+    // long press
+    this.hamm.add(new Hammer.Press({ time: 600 }));
     this.hamm.on("press", () => this.actionLongPress());
+
+    // swipe vertical (NOVO)
+    this.hamm.add(
+      new Hammer.Swipe({
+        direction: Hammer.DIRECTION_VERTICAL,
+        threshold: 8,
+        velocity: 0.2,
+      })
+    );
+
+    this.hamm.on("swipeup", () => this.scrollToMenu());
+    this.hamm.on("swipedown", () => this.scrollToOrder());
   }
 
   // =========================================================================
-  // DETECÇÃO PERSONALIZADA DE TAP / MULTI-TAP
+  // TAP / MULTITAP — SEM 3 TOQUES COM 2 DEDOS
   // =========================================================================
 
   setupTapDetection() {
-    let tapTimes = [];
-    let touchPoints = 0;
+    let fingers = 0;
 
-    let doubleTapTimeout1 = null;
-    let doubleTapTimeout2 = null;
+    let tap1 = [];
+    let tap2 = [];
+
+    let timeout1 = null;
+    let timeout2 = null;
 
     document.addEventListener("touchstart", (ev) => {
-      touchPoints = ev.touches.length;
+      fingers = ev.touches.length;
 
-      tapTimes.push(Date.now());
-      tapTimes = tapTimes.slice(-3); // mantém últimos 3 taps
+      if (fingers === 1) {
+        tap1.push(Date.now());
+        tap1 = tap1.slice(-3);
+      }
+
+      if (fingers === 2) {
+        tap2.push(Date.now());
+        tap2 = tap2.slice(-3);
+      }
     });
 
     document.addEventListener("touchend", () => {
       const now = Date.now();
-      tapTimes = tapTimes.filter((t) => now - t < 350);
 
-      // -----------------------------------------------
-      //        1 DEDO — Double e Triple Tap
-      // -----------------------------------------------
-      if (touchPoints === 1) {
-        if (tapTimes.length === 2) {
-          this.blockDoubleTap1 = false;
-          clearTimeout(doubleTapTimeout1);
+      tap1 = tap1.filter(t => now - t < 350);
+      tap2 = tap2.filter(t => now - t < 350);
 
-          doubleTapTimeout1 = setTimeout(() => {
-            if (!this.blockDoubleTap1) {
-              this.actionDoubleTapOne();
-            }
-          }, 380);
-        }
+      // ==============================
+      //   TAP COM 1 DEDO
+      // ==============================
 
-        if (tapTimes.length === 3) {
-          this.blockDoubleTap1 = true;
-          clearTimeout(doubleTapTimeout1);
-          this.actionTripleTapOne();
-          tapTimes = [];
-        }
+      // TRIPLE TAP 1 DEDO
+      if (fingers === 1 && tap1.length === 3) {
+        clearTimeout(timeout1);
+        this.actionTripleTapOne();
+        tap1 = [];
+        return;
       }
 
-      // -----------------------------------------------
-      //        2 DEDOS — Double e Triple Tap
-      // -----------------------------------------------
-      if (touchPoints === 2) {
-        if (tapTimes.length === 2) {
-          this.blockDoubleTap2 = false;
-          clearTimeout(doubleTapTimeout2);
-
-          doubleTapTimeout2 = setTimeout(() => {
-            if (!this.blockDoubleTap2) {
-              this.actionDoubleTapTwo();
-            }
-          }, 380);
-        }
-
-        if (tapTimes.length === 3) {
-          this.blockDoubleTap2 = true;
-          clearTimeout(doubleTapTimeout2);
-
-          this.actionTripleTapTwo();
-          tapTimes = [];
-        }
+      // DOUBLE TAP 1 DEDO
+      if (fingers === 1 && tap1.length === 2) {
+        clearTimeout(timeout1);
+        timeout1 = setTimeout(() => {
+          if (tap1.length === 2) this.actionDoubleTapOne();
+        }, 300);
       }
 
-      touchPoints = 0;
+      // ==============================
+      //   TAP COM 2 DEDOS
+      // ==============================
+
+      // (TRIPLE TAP COM 2 DEDOS REMOVIDO)
+
+      if (fingers === 2 && tap2.length === 2) {
+        clearTimeout(timeout2);
+        timeout2 = setTimeout(() => {
+          if (tap2.length === 2) this.actionDoubleTapTwo();
+        }, 300);
+      }
+
+      fingers = 0;
     });
   }
 
   // =========================================================================
-  // SWIPE → CARDÁPIO E PEDIDO
+  // SWIPE HORIZONTAL — navegação nos carrosséis
   // =========================================================================
 
   bindSwipeAreas() {
-    if (!this.menuCarousel || !this.orderCarousel) {
-      console.warn("Carrosséis não encontrados.");
-      return;
-    }
+    if (!this.menuCarousel || !this.orderCarousel) return;
 
     const menuContainer =
       this.menuCarousel.closest(".menu-carousel") || this.menuCarousel;
@@ -156,12 +154,11 @@ class GestureController {
   }
 
   // =========================================================================
-  // AÇÕES — LONG PRESS / TAPS / TRIPLE TAP
+  // AÇÕES — LONG PRESS / DOUBLE / TRIPLE TAP
   // =========================================================================
 
   actionLongPress() {
     this.speak("Modo leitor ativado.");
-
     const c = this.getCurrentCardInfo();
     if (c) this.speak(`Item ${c.name}, preço ${c.price} reais.`);
   }
@@ -180,42 +177,30 @@ class GestureController {
   }
 
   // =========================================================================
-  // TRIPLE TAP 2 DEDOS — ALTERNAR CARROSSEL COM SCROLL GLOBAL
+  // SWIPE VERTICAL — CENTRALIZAR CARDÁPIO OU PEDIDO (NOVO)
   // =========================================================================
 
-  actionTripleTapTwo() {
-    const menuSection = this.menuCarousel.closest(".menu-carousel");
-    const orderSection = this.orderCarousel.closest(".order-carousel");
+  scrollToMenu() {
+    const section = this.menuCarousel.closest(".menu-carousel");
+    section?.scrollIntoView({ behavior: "smooth", block: "center" });
+    this.activeCarousel = "menu";
+    this.speak("Cardápio centralizado.");
+  }
 
-    if (this.activeCarousel === "menu") {
-      this.activeCarousel = "order";
-      this.speak("Carrossel do pedido ativado.");
-
-      orderSection?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    } else {
-      this.activeCarousel = "menu";
-      this.speak("Carrossel do cardápio ativado.");
-
-      menuSection?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
+  scrollToOrder() {
+    const section = this.orderCarousel.closest(".order-carousel");
+    section?.scrollIntoView({ behavior: "smooth", block: "center" });
+    this.activeCarousel = "order";
+    this.speak("Pedido centralizado.");
   }
 
   // =========================================================================
-  // SWIPE — NAVEGAÇÃO DOS DOIS CARROSSEIS
+  // SWIPE HORIZONTAL — NAVEGAÇÃO ENTRE CARDS
   // =========================================================================
 
   actionSwipe(direction, targetCarousel) {
     targetCarousel = targetCarousel || this.activeCarousel;
 
-    // -------------------------
-    // CARDÁPIO
-    // -------------------------
     if (targetCarousel === "menu") {
       if (!window.menuItems.length) return;
 
@@ -232,9 +217,6 @@ class GestureController {
       return;
     }
 
-    // -------------------------
-    // PEDIDO
-    // -------------------------
     if (!window.orderItems.length) {
       this.speak("Nenhum item no pedido para navegar.");
       return;
@@ -251,7 +233,7 @@ class GestureController {
 
     window.requestAnimationFrame(() => {
       const track = document.getElementById("orderCarousel");
-      if (track) track.offsetWidth; // força animação
+      if (track) track.offsetWidth;
       window.updateOrderCarouselNavigation();
     });
 
