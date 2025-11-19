@@ -6,6 +6,7 @@
 class GestureController {
   constructor() {
     this.activeCarousel = "menu"; // 'menu' ou 'order'
+    this.readerMode = false; // NOVO: modo leitor controlado
     this.init();
   }
 
@@ -31,9 +32,9 @@ class GestureController {
 
     // long press
     this.hamm.add(new Hammer.Press({ time: 600 }));
-    this.hamm.on("press", () => this.actionLongPress());
+    this.hamm.on("press", () => this.toggleReaderMode());
 
-    // swipe vertical (NOVO)
+    // swipe vertical
     this.hamm.add(
       new Hammer.Swipe({
         direction: Hammer.DIRECTION_VERTICAL,
@@ -42,79 +43,88 @@ class GestureController {
       })
     );
 
-    this.hamm.on("swipeup", () => this.scrollToMenu());
-    this.hamm.on("swipedown", () => this.scrollToOrder());
+    this.hamm.on("swipedown", () => this.scrollToMenu());
+    this.hamm.on("swipeup", () => this.scrollToOrder());
   }
 
   // =========================================================================
-  // TAP / MULTITAP — SEM 3 TOQUES COM 2 DEDOS
+  // TAP / MULTITAP — DETECÇÃO DE TOQUES
   // =========================================================================
 
-  setupTapDetection() {
-    let fingers = 0;
+setupTapDetection() {
+  let tap1 = [];
+  let tap2 = [];
 
-    let tap1 = [];
-    let tap2 = [];
+  let tapTimeout1 = null;
+  let tapTimeout2 = null;
 
-    let timeout1 = null;
-    let timeout2 = null;
+  const TAP_DELAY = 450; // ← TEMPO PADRÃO DE ACESSIBILIDADE
 
-    document.addEventListener("touchstart", (ev) => {
-      fingers = ev.touches.length;
+  document.addEventListener("touchstart", (ev) => {
+    const fingers = ev.touches.length;
+    const now = Date.now();
 
-      if (fingers === 1) {
-        tap1.push(Date.now());
-        tap1 = tap1.slice(-3);
-      }
+    if (fingers === 1) {
+      tap1.push(now);
+      tap1 = tap1.slice(-3);
+    }
 
-      if (fingers === 2) {
-        tap2.push(Date.now());
-        tap2 = tap2.slice(-3);
-      }
-    });
+    if (fingers === 2) {
+      tap2.push(now);
+      tap2 = tap2.slice(-2);
+    }
+  });
 
-    document.addEventListener("touchend", () => {
-      const now = Date.now();
+  document.addEventListener("touchend", () => {
+    const now = Date.now();
 
-      tap1 = tap1.filter(t => now - t < 350);
-      tap2 = tap2.filter(t => now - t < 350);
+    tap1 = tap1.filter(t => now - t < TAP_DELAY);
+    tap2 = tap2.filter(t => now - t < TAP_DELAY);
 
-      // ==============================
-      //   TAP COM 1 DEDO
-      // ==============================
+    // =====================================================
+    //  TRIPLE TAP — PRIORIDADE (450ms)
+    // =====================================================
 
-      // TRIPLE TAP 1 DEDO
-      if (fingers === 1 && tap1.length === 3) {
-        clearTimeout(timeout1);
-        this.actionTripleTapOne();
-        tap1 = [];
-        return;
-      }
+    if (tap1.length === 3) {
+      clearTimeout(tapTimeout1);
+      tapTimeout1 = setTimeout(() => {
+        if (tap1.length === 3) {
+          this.actionTripleTapOne();
+          tap1 = [];
+        }
+      }, TAP_DELAY);
+      return;
+    }
 
-      // DOUBLE TAP 1 DEDO
-      if (fingers === 1 && tap1.length === 2) {
-        clearTimeout(timeout1);
-        timeout1 = setTimeout(() => {
-          if (tap1.length === 2) this.actionDoubleTapOne();
-        }, 300);
-      }
+    // =====================================================
+    //  DOUBLE TAP — CONFIRMADO APÓS 450ms SEM TERCEIRO TOQUE
+    // =====================================================
 
-      // ==============================
-      //   TAP COM 2 DEDOS
-      // ==============================
+    if (tap1.length === 2) {
+      clearTimeout(tapTimeout1);
+      tapTimeout1 = setTimeout(() => {
+        if (tap1.length === 2) {
+          this.actionDoubleTapOne();
+        }
+      }, TAP_DELAY);
+      return;
+    }
 
-      // (TRIPLE TAP COM 2 DEDOS REMOVIDO)
+    // =====================================================
+    //  DOUBLE TAP 2 DEDOS — ACESSIBILIDADE
+    // =====================================================
 
-      if (fingers === 2 && tap2.length === 2) {
-        clearTimeout(timeout2);
-        timeout2 = setTimeout(() => {
-          if (tap2.length === 2) this.actionDoubleTapTwo();
-        }, 300);
-      }
-
-      fingers = 0;
-    });
-  }
+    if (tap2.length === 2) {
+      clearTimeout(tapTimeout2);
+      tapTimeout2 = setTimeout(() => {
+        if (tap2.length === 2) {
+          this.actionDoubleTapTwo();
+        }
+      }, TAP_DELAY);
+      return;
+    }
+  });
+}
 
   // =========================================================================
   // SWIPE HORIZONTAL — navegação nos carrosséis
@@ -157,41 +167,71 @@ class GestureController {
   // AÇÕES — LONG PRESS / DOUBLE / TRIPLE TAP
   // =========================================================================
 
-  actionLongPress() {
-    this.speak("Modo leitor ativado.");
-    const c = this.getCurrentCardInfo();
-    if (c) this.speak(`Item ${c.name}, preço ${c.price} reais.`);
+  toggleReaderMode() {
+    this.readerMode = !this.readerMode;
+    if (this.readerMode) {
+      this.speak("Modo leitor ativado. Use gestos para navegar.");
+      this.speakInstructions();
+    } else {
+      this.speak("Modo leitor desativado.");
+    }
+  }
+
+  speakInstructions() {
+    const instructions = `
+      Instruções dos gestos: 
+      Deslize para cima para navegar pelo pedido.
+      Deslize para baixo para navegar pelo cardápio.
+      Deslize para os lados para navegar entre os itens.
+      Toque duplo com um dedo para adicionar item ao pedido.
+      Toque triplo com um dedo para enviar o pedido.
+      Toque duplo com dois dedos para remover item do pedido.
+      Pressione longo para ouvir estas instruções novamente.
+    `;
+    this.speak(instructions);
   }
 
   actionDoubleTapOne() {
+    if (this.readerMode) {
+      this.speak("Adicionando item ao pedido.");
+    }
     window.addItemFromGesture();
   }
 
   actionTripleTapOne() {
+    if (this.readerMode) {
+      this.speak("Enviando pedido.");
+    }
     window.sendOrder();
-    this.speak("Pedido enviado.");
   }
 
   actionDoubleTapTwo() {
+    if (this.readerMode) {
+      this.speak("Removendo item do pedido.");
+    }
     window.deleteCurrentOrderItem();
   }
 
   // =========================================================================
-  // SWIPE VERTICAL — CENTRALIZAR CARDÁPIO OU PEDIDO (NOVO)
+  // SWIPE VERTICAL — CENTRALIZAR CARDÁPIO OU PEDIDO
   // =========================================================================
 
   scrollToMenu() {
     const section = this.menuCarousel.closest(".menu-carousel");
     section?.scrollIntoView({ behavior: "smooth", block: "center" });
     this.activeCarousel = "menu";
-    this.speak("Cardápio centralizado.");
+    if (this.readerMode) {
+      this.speak("Cardápio centralizado.");
+    }
   }
 
   scrollToOrder() {
     const section = this.orderCarousel.closest(".order-carousel");
     section?.scrollIntoView({ behavior: "smooth", block: "center" });
     this.activeCarousel = "order";
-    this.speak("Pedido centralizado.");
+    if (this.readerMode) {
+      this.speak("Pedido centralizado.");
+    }
   }
 
   // =========================================================================
@@ -214,11 +254,18 @@ class GestureController {
       }
 
       window.updateMenuCarousel();
+      
+      if (this.readerMode) {
+        const c = this.getCurrentCardInfo();
+        if (c) this.speak(`Navegando para ${c.name}, preço ${c.price} reais.`);
+      }
       return;
     }
 
     if (!window.orderItems.length) {
-      this.speak("Nenhum item no pedido para navegar.");
+      if (this.readerMode) {
+        this.speak("Nenhum item no pedido para navegar.");
+      }
       return;
     }
 
@@ -237,8 +284,10 @@ class GestureController {
       window.updateOrderCarouselNavigation();
     });
 
-    const item = window.orderItems[window.currentOrderIndex];
-    if (item) this.speak(`Pedido: ${item.name}`);
+    if (this.readerMode) {
+      const item = window.orderItems[window.currentOrderIndex];
+      if (item) this.speak(`Navegando para pedido: ${item.name}`);
+    }
   }
 
   // =========================================================================
@@ -246,8 +295,11 @@ class GestureController {
   // =========================================================================
 
   speak(text) {
+    speechSynthesis.cancel();
+    
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "pt-BR";
+    u.rate = 0.9;
     speechSynthesis.speak(u);
   }
 
