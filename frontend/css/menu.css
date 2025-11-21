@@ -169,13 +169,13 @@ body {
 }
 
 .menu-card p {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #4a3c3c;
 }
 
 .menu-description {
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   color: #5c4b4b;
   font-style: italic;
   margin-bottom: 0.6rem;
