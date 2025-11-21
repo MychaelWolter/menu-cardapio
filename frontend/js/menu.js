@@ -128,14 +128,25 @@ function updateMenuCarousel() {
   const totalCards = cards.length;
 
   cards.forEach((card, index) => {
+    const description = card.querySelector('.menu-description');
+    
     card.classList.remove("active", "left", "right");
 
     if (index === currentMenuIndex) {
       card.classList.add("active");
+      // Card ativo - mostra a descrição
+      if (description) description.style.display = "block";
     } else if (index === (currentMenuIndex - 1 + totalCards) % totalCards) {
       card.classList.add("left");
+      // Card à esquerda - oculta descrição
+      if (description) description.style.display = "none";
     } else if (index === (currentMenuIndex + 1) % totalCards) {
       card.classList.add("right");
+      // Card à direita - oculta descrição
+      if (description) description.style.display = "none";
+    } else {
+      // Cards não visíveis - oculta descrição
+      if (description) description.style.display = "none";
     }
   });
 }

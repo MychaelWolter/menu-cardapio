@@ -847,3 +847,29 @@ html, body {
 .order-carousel {
     touch-action: pan-y !important; /* permite swipe horizontal sem scroll travar */
 }
+
+#unlockAudioBtn {
+  background: none !important;   /* garante que não terá fundo */
+  border: none !important;       /* sem bordas */
+  font-size: 24px;
+  cursor: pointer;
+  margin-left: 10px;
+  color: inherit;                /* mesma cor do tema atual */
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  padding: 0;                    /* remove espaço interno */
+}
+
+#unlockAudioBtn:hover {
+  transform: scale(1.15);
+}
+
+#unlockAudioBtn:active {
+  transform: scale(0.90);
+  opacity: 0.7;
+}
+
+#unlockAudioBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
