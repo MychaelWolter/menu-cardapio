@@ -12,24 +12,15 @@ class CustomModal {
           <div class="modal-icon">⚠️</div>
           <h3 class="modal-title">${title}</h3>
           <p class="modal-message">${message}</p>
-          <button class="modal-btn modal-btn-ok">OK</button>
         </div>
       `;
       
       document.body.appendChild(overlay);
       
-      const okBtn = overlay.querySelector('.modal-btn-ok');
-      okBtn.focus();
-      
-      const removeModal = () => {
+      setTimeout(() => {
         document.body.removeChild(overlay);
         resolve(true);
-      };
-      
-      okBtn.addEventListener('click', removeModal);
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) removeModal();
-      });
+      }, 2000);
     });
   }
 
@@ -81,24 +72,15 @@ class CustomModal {
           <div class="modal-icon">✅</div>
           <h3 class="modal-title">${title}</h3>
           <p class="modal-message">${message}</p>
-          <button class="modal-btn modal-btn-ok">OK</button>
         </div>
       `;
       
       document.body.appendChild(overlay);
       
-      const okBtn = overlay.querySelector('.modal-btn-ok');
-      okBtn.focus();
-      
-      const removeModal = () => {
+      setTimeout(() => {
         document.body.removeChild(overlay);
         resolve(true);
-      };
-      
-      okBtn.addEventListener('click', removeModal);
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) removeModal();
-      });
+      }, 2000);
     });
   }
 
@@ -113,24 +95,15 @@ class CustomModal {
           <div class="modal-icon">❌</div>
           <h3 class="modal-title">${title}</h3>
           <p class="modal-message">${message}</p>
-          <button class="modal-btn modal-btn-ok">OK</button>
         </div>
       `;
       
       document.body.appendChild(overlay);
       
-      const okBtn = overlay.querySelector('.modal-btn-ok');
-      okBtn.focus();
-      
-      const removeModal = () => {
+      setTimeout(() => {
         document.body.removeChild(overlay);
         resolve(true);
-      };
-      
-      okBtn.addEventListener('click', removeModal);
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) removeModal();
-      });
+      }, 2000);
     });
   }
 }

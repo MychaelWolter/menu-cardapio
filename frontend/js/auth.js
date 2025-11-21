@@ -18,7 +18,8 @@ loginBtn.addEventListener('click', async () => {
 
   let payload = { type };
   if (type === 'admin') {
-    payload.username = document.getElementById('username').value;
+    // Remove espaços no início e fim do username
+    payload.username = document.getElementById('username').value.trim();
     payload.password = document.getElementById('password').value;
   } else {
     payload.tableNumber = document.getElementById('tableNumber').value;
