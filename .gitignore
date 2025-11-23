@@ -1,2 +1,4 @@
-node_modules/
-package-lock.json
+# Backend specific
+/backend/node_modules/
+/backend/.env
+/backend/package-lock.json
