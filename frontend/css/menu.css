@@ -873,3 +873,21 @@ html, body {
   cursor: default;
   transform: none;
 }
+
+/* Desativa o menu contextual em imagens */
+img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    pointer-events: none; /* Opcional - se ainda aparecer */
+}
+
+/* Se quiser manter a interação mas só bloquear o menu contextual */
+.carousel-item img, .menu-item img, .order-item img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
