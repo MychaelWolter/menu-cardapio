@@ -8,6 +8,8 @@ class GestureController {
   constructor() {
     this.activeCarousel = "menu"; // 'menu' ou 'order'
     this.waitingConfirmSend = false;
+    this.pressInProgress = false; // NOVO: Controla se já há um press em andamento
+    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     this.ensureGlobalVariables();
     this.init();
@@ -82,49 +84,125 @@ class GestureController {
     }
   }
 
-  // =========================================================================
-  // HAMMER — Long press + swipe vertical
-  // =========================================================================
+// =========================================================================
+// HAMMER - VERSÃO FINAL SEM CONFLITO COM 2 DEDOS
+// =========================================================================
 
-  setupHammer() {
-    this.hamm = new Hammer.Manager(document.body);
-    this.hamm.set({ enable: true });
+setupHammer() {
 
-    this.hamm.add(new Hammer.Press({ time: 600 })); // long press
-    this.hamm.on("press", () => {
-      this.cancelSendConfirmation();
-      this.speakInstructions(); // APENAS LÊ AS INSTRUÇÕES
-    });
+  // MANAGER GLOBAL
+  this.hamm = new Hammer.Manager(document.body);
 
-    this.hamm.add(
-      new Hammer.Swipe({
-        direction: Hammer.DIRECTION_VERTICAL,
-        threshold: 8,
-        velocity: 0.2,
-      })
-    );
+  // ----------------------------
+  // PRESS 1 DEDO → INSTRUÇÕES
+  // ----------------------------
+  const pressOneFinger = new Hammer.Press({
+    time: 600,
+    pointers: 1,
+    threshold: 10
+  });
 
-    this.hamm.on("swipedown", () => {
-      this.cancelSendConfirmation();
-      this.scrollToMenu();
-    });
+  // ----------------------------
+  // SWIPES VERTICAIS
+  // ----------------------------
+  const swipeVertical = new Hammer.Swipe({
+    direction: Hammer.DIRECTION_VERTICAL,
+    threshold: 5,
+    velocity: 0.1
+  });
 
-    this.hamm.on("swipeup", () => {
-      this.cancelSendConfirmation();
-      this.scrollToOrder();
+  // ----------------------------
+  // ADICIONA RECOGNIZERS
+  // ----------------------------
+  this.hamm.add([pressOneFinger, swipeVertical]);
+
+  // IMPORTANTE: NÃO usar requireFailure — isso que travava tudo.
+  pressOneFinger.recognizeWith(swipeVertical);
+
+  // ----------------------------
+  // PRESS COM 2 DEDOS → CUSTOM (PAN + TIMER) - APENAS PARA ANDROID
+  // ----------------------------
+  if (!this.isIOS) {
+    let twoFingerTimer = null;
+    let twoFingerActive = false;
+
+    this.hamm.on("hammer.input", (ev) => {
+
+      // Reset quando começa qualquer gesto novo
+      if (ev.isFirst) {
+        if (twoFingerTimer) {
+          clearTimeout(twoFingerTimer);
+          twoFingerTimer = null;
+        }
+        twoFingerActive = false;
+      }
+
+      // Detectou DOIS dedos parados → inicia timer (APENAS ANDROID)
+      if (ev.pointers && ev.pointers.length === 2) {
+        if (!twoFingerActive) {
+
+          twoFingerActive = true;
+
+          twoFingerTimer = setTimeout(() => {
+            this.actionLongPressTwoFingers();
+            twoFingerActive = false;
+          }, 800); // mesmo tempo que você usava
+        }
+      }
+
+      // Se começar a mover → cancela o press de 2 dedos
+      if (ev.eventType === Hammer.INPUT_MOVE) {
+        if (twoFingerActive) {
+          clearTimeout(twoFingerTimer);
+          twoFingerTimer = null;
+          twoFingerActive = false;
+        }
+      }
+
+      // Se tirar o dedo → cancela
+      if (ev.isFinal) {
+        if (twoFingerActive) {
+          clearTimeout(twoFingerTimer);
+          twoFingerTimer = null;
+          twoFingerActive = false;
+        }
+      }
     });
   }
 
+  // ----------------------------
+  // PRESS 1 DEDO EVENTO NORMAL
+  // ----------------------------
+  this.hamm.on("press", (ev) => {
+    if (ev.pointers.length === 1) {
+      this.speakInstructions();
+    }
+  });
+
+  // ----------------------------
+  // SWIPES VERTICAIS
+  // ----------------------------
+  this.hamm.on("swipeup swipedown", (ev) => {
+    this.cancelSendConfirmation();
+
+    if (ev.type === "swipeup") {
+      this.scrollToOrder();
+    } 
+    else {
+      this.scrollToMenu();
+    }
+  });
+}
+
   // =========================================================================
-  // TAP / MULTITAP — TOQUES
+  // TAP / MULTITAP — TOQUES (COM DOUBLE TAP 2 DEDOS PARA iOS)
   // =========================================================================
 
   setupTapDetection() {
     let tap1 = [];
-    let tap2 = [];
-
+    let tap2 = []; // NOVO: Array para toques com 2 dedos
     let tapTimeout1 = null;
-    let tapTimeout2 = null;
+    let tapTimeout2 = null; // NOVO: Timeout para double tap 2 dedos
 
     const TAP_DELAY = 450;
 
@@ -132,24 +210,27 @@ class GestureController {
       const fingers = ev.touches.length;
       const now = Date.now();
 
+      // TOQUES COM 1 DEDO
       if (fingers === 1) {
         tap1.push(now);
-        tap1 = tap1.slice(-3);
+        tap1 = tap1.slice(-3); // Mantém apenas os 3 últimos toques
       }
 
-      if (fingers === 2) {
+      // NOVO: TOQUES COM 2 DEDOS - APENAS PARA iOS
+      if (this.isIOS && fingers === 2) {
         tap2.push(now);
-        tap2 = tap2.slice(-2);
+        tap2 = tap2.slice(-2); // Mantém apenas os 2 últimos toques
       }
     });
 
     document.addEventListener("touchend", () => {
       const now = Date.now();
 
+      // Filtra toques recentes
       tap1 = tap1.filter((t) => now - t < TAP_DELAY);
       tap2 = tap2.filter((t) => now - t < TAP_DELAY);
 
-      // TRIPLE TAP
+      // TRIPLE TAP - ENVIAR PEDIDO
       if (tap1.length === 3) {
         clearTimeout(tapTimeout1);
         tapTimeout1 = setTimeout(() => {
@@ -161,7 +242,7 @@ class GestureController {
         return;
       }
 
-      // DOUBLE TAP ONE FINGER
+      // DOUBLE TAP ONE FINGER - ADICIONAR ITEM
       if (tap1.length === 2) {
         clearTimeout(tapTimeout1);
         tapTimeout1 = setTimeout(() => {
@@ -172,12 +253,13 @@ class GestureController {
         return;
       }
 
-      // DOUBLE TAP TWO FINGERS
-      if (tap2.length === 2) {
+      // NOVO: DOUBLE TAP 2 DEDOS - APENAS PARA iOS (REMOVER ITEM)
+      if (this.isIOS && tap2.length === 2) {
         clearTimeout(tapTimeout2);
         tapTimeout2 = setTimeout(() => {
           if (tap2.length === 2) {
             this.actionDoubleTapTwo();
+            tap2 = [];
           }
         }, TAP_DELAY);
         return;
@@ -234,15 +316,22 @@ class GestureController {
   // =========================================================================
 
   speakInstructions() {
-    const text = `
+    let text = `
     Gestos disponíveis. 
     Deslize para cima para ir ao pedido. 
     Para baixo para o cardápio. 
     Deslize para os lados para navegar entre itens. 
     Toque duplo para adicionar item. 
     Toque triplo para enviar o pedido. 
-    Toque duplo com dois dedos para remover item.
     `;
+    
+    // INSTRUÇÃO DIFERENTE POR PLATAFORMA
+    if (this.isIOS) {
+      text += "Toque duplo com dois dedos para remover item.";
+    } else {
+      text += "Pressione com dois dedos por um segundo para remover item.";
+    }
+    
     this.speak(text);
   }
 
@@ -264,7 +353,30 @@ class GestureController {
   }
 
   // ============================================================
-  //      DOUBLE TAP 2 DEDOS → REMOVER ITEM
+  //      LONG PRESS 2 DEDOS → REMOVER ITEM (ANDROID)
+  // ============================================================
+
+  actionLongPressTwoFingers() {
+    this.cancelSendConfirmation();
+
+    // VERIFICAÇÃO DE SEGURANÇA - Só permite remover se há itens
+    if (!window.orderItems || window.orderItems.length === 0) {
+      this.speak("Não há itens para remover.");
+      return;
+    }
+
+    this.speak("Removendo item..."); // SEMPRE FALA
+
+    if (typeof window.deleteCurrentOrderItem === "function") {
+      window.deleteCurrentOrderItem();
+    } else {
+      this.speak("Função de remover não disponível.");
+      console.error("deleteCurrentOrderItem não é uma função");
+    }
+  }
+
+  // ============================================================
+  //      DOUBLE TAP 2 DEDOS → REMOVER ITEM (iOS)
   // ============================================================
 
   actionDoubleTapTwo() {
