@@ -9,7 +9,8 @@ class GestureController {
     this.activeCarousel = "menu"; // 'menu' ou 'order'
     this.waitingConfirmSend = false;
     this.pressInProgress = false; // NOVO: Controla se já há um press em andamento
-    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    this.isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     this.ensureGlobalVariables();
     this.init();
@@ -84,115 +85,111 @@ class GestureController {
     }
   }
 
-// =========================================================================
-// HAMMER - VERSÃO FINAL SEM CONFLITO COM 2 DEDOS
-// =========================================================================
+  // =========================================================================
+  // HAMMER - VERSÃO FINAL SEM CONFLITO COM 2 DEDOS
+  // =========================================================================
 
-setupHammer() {
+  setupHammer() {
+    // MANAGER GLOBAL
+    this.hamm = new Hammer.Manager(document.body);
 
-  // MANAGER GLOBAL
-  this.hamm = new Hammer.Manager(document.body);
+    // ----------------------------
+    // PRESS 1 DEDO → INSTRUÇÕES
+    // ----------------------------
+    const pressOneFinger = new Hammer.Press({
+      time: 600,
+      pointers: 1,
+      threshold: 10,
+    });
 
-  // ----------------------------
-  // PRESS 1 DEDO → INSTRUÇÕES
-  // ----------------------------
-  const pressOneFinger = new Hammer.Press({
-    time: 600,
-    pointers: 1,
-    threshold: 10
-  });
+    // ----------------------------
+    // SWIPES VERTICAIS
+    // ----------------------------
+    const swipeVertical = new Hammer.Swipe({
+      direction: Hammer.DIRECTION_VERTICAL,
+      threshold: 5,
+      velocity: 0.1,
+    });
 
-  // ----------------------------
-  // SWIPES VERTICAIS
-  // ----------------------------
-  const swipeVertical = new Hammer.Swipe({
-    direction: Hammer.DIRECTION_VERTICAL,
-    threshold: 5,
-    velocity: 0.1
-  });
+    // ----------------------------
+    // ADICIONA RECOGNIZERS
+    // ----------------------------
+    this.hamm.add([pressOneFinger, swipeVertical]);
 
-  // ----------------------------
-  // ADICIONA RECOGNIZERS
-  // ----------------------------
-  this.hamm.add([pressOneFinger, swipeVertical]);
+    // IMPORTANTE: NÃO usar requireFailure — isso que travava tudo.
+    pressOneFinger.recognizeWith(swipeVertical);
 
-  // IMPORTANTE: NÃO usar requireFailure — isso que travava tudo.
-  pressOneFinger.recognizeWith(swipeVertical);
+    // ----------------------------
+    // PRESS COM 2 DEDOS → CUSTOM (PAN + TIMER) - APENAS PARA ANDROID
+    // ----------------------------
+    if (!this.isIOS) {
+      let twoFingerTimer = null;
+      let twoFingerActive = false;
 
-  // ----------------------------
-  // PRESS COM 2 DEDOS → CUSTOM (PAN + TIMER) - APENAS PARA ANDROID
-  // ----------------------------
-  if (!this.isIOS) {
-    let twoFingerTimer = null;
-    let twoFingerActive = false;
-
-    this.hamm.on("hammer.input", (ev) => {
-
-      // Reset quando começa qualquer gesto novo
-      if (ev.isFirst) {
-        if (twoFingerTimer) {
-          clearTimeout(twoFingerTimer);
-          twoFingerTimer = null;
+      this.hamm.on("hammer.input", (ev) => {
+        // Reset quando começa qualquer gesto novo
+        if (ev.isFirst) {
+          if (twoFingerTimer) {
+            clearTimeout(twoFingerTimer);
+            twoFingerTimer = null;
+          }
+          twoFingerActive = false;
         }
-        twoFingerActive = false;
-      }
 
-      // Detectou DOIS dedos parados → inicia timer (APENAS ANDROID)
-      if (ev.pointers && ev.pointers.length === 2) {
-        if (!twoFingerActive) {
+        // Detectou DOIS dedos parados → inicia timer (APENAS ANDROID)
+        if (ev.pointers && ev.pointers.length === 2) {
+          if (!twoFingerActive) {
+            twoFingerActive = true;
 
-          twoFingerActive = true;
+            twoFingerTimer = setTimeout(() => {
+              this.actionLongPressTwoFingers();
+              twoFingerActive = false;
+            }, 800); // mesmo tempo que você usava
+          }
+        }
 
-          twoFingerTimer = setTimeout(() => {
-            this.actionLongPressTwoFingers();
+        // Se começar a mover → cancela o press de 2 dedos
+        if (ev.eventType === Hammer.INPUT_MOVE) {
+          if (twoFingerActive) {
+            clearTimeout(twoFingerTimer);
+            twoFingerTimer = null;
             twoFingerActive = false;
-          }, 800); // mesmo tempo que você usava
+          }
         }
-      }
 
-      // Se começar a mover → cancela o press de 2 dedos
-      if (ev.eventType === Hammer.INPUT_MOVE) {
-        if (twoFingerActive) {
-          clearTimeout(twoFingerTimer);
-          twoFingerTimer = null;
-          twoFingerActive = false;
+        // Se tirar o dedo → cancela
+        if (ev.isFinal) {
+          if (twoFingerActive) {
+            clearTimeout(twoFingerTimer);
+            twoFingerTimer = null;
+            twoFingerActive = false;
+          }
         }
-      }
+      });
+    }
 
-      // Se tirar o dedo → cancela
-      if (ev.isFinal) {
-        if (twoFingerActive) {
-          clearTimeout(twoFingerTimer);
-          twoFingerTimer = null;
-          twoFingerActive = false;
-        }
+    // ----------------------------
+    // PRESS 1 DEDO EVENTO NORMAL
+    // ----------------------------
+    this.hamm.on("press", (ev) => {
+      if (ev.pointers.length === 1) {
+        this.speakInstructions();
+      }
+    });
+
+    // ----------------------------
+    // SWIPES VERTICAIS
+    // ----------------------------
+    this.hamm.on("swipeup swipedown", (ev) => {
+      this.cancelSendConfirmation();
+
+      if (ev.type === "swipeup") {
+        this.scrollToOrder();
+      } else {
+        this.scrollToMenu();
       }
     });
   }
-
-  // ----------------------------
-  // PRESS 1 DEDO EVENTO NORMAL
-  // ----------------------------
-  this.hamm.on("press", (ev) => {
-    if (ev.pointers.length === 1) {
-      this.speakInstructions();
-    }
-  });
-
-  // ----------------------------
-  // SWIPES VERTICAIS
-  // ----------------------------
-  this.hamm.on("swipeup swipedown", (ev) => {
-    this.cancelSendConfirmation();
-
-    if (ev.type === "swipeup") {
-      this.scrollToOrder();
-    } 
-    else {
-      this.scrollToMenu();
-    }
-  });
-}
 
   // =========================================================================
   // TAP / MULTITAP — TOQUES (COM DOUBLE TAP 2 DEDOS PARA iOS)
@@ -319,19 +316,24 @@ setupHammer() {
     let text = `
     Gestos disponíveis. 
     Deslize para cima para ir ao pedido. 
-    Para baixo para o cardápio. 
-    Deslize para os lados para navegar entre itens. 
-    Toque duplo para adicionar item. 
-    Toque triplo para enviar o pedido. 
+    Deslize para baixo para voltar ao cardápio. 
+    Deslize para os lados para navegar entre os itens. 
+    Toque triplo com um dedo para enviar o pedido em duas etapas.
+
+    Se o cardápio estiver selecionado:
+    Toque duplo com um dedo para adicionar uma unidade do item em destaque.
+
+    Se o pedido estiver selecionado:
+    Toque duplo com um dedo para remover o item em destaque.
     `;
-    
+
     // INSTRUÇÃO DIFERENTE POR PLATAFORMA
     if (this.isIOS) {
       text += "Toque duplo com dois dedos para remover item.";
     } else {
       text += "Pressione com dois dedos por um segundo para remover item.";
     }
-    
+
     this.speak(text);
   }
 
@@ -376,25 +378,43 @@ setupHammer() {
   }
 
   // ============================================================
-  //      DOUBLE TAP 2 DEDOS → REMOVER ITEM (iOS)
+  //      DOUBLE TAP 1 DEDO → ADICIONAR OU REMOVER DEPENDENDO DO CARROSSEL
   // ============================================================
 
-  actionDoubleTapTwo() {
+  actionDoubleTapOne() {
     this.cancelSendConfirmation();
 
-    // VERIFICAÇÃO DE SEGURANÇA - Só permite remover se há itens
-    if (!window.orderItems || window.orderItems.length === 0) {
-      this.speak("Não há itens para remover.");
+    // Se estiver no CARDÁPIO → ADICIONAR item
+    if (this.activeCarousel === "menu") {
+      this.speak("Adicionando item...");
+
+      if (typeof window.addItemFromGesture === "function") {
+        window.addItemFromGesture();
+      } else {
+        this.speak("Função de adicionar não disponível.");
+        console.error("addItemFromGesture não é uma função");
+      }
+
       return;
     }
 
-    this.speak("Removendo item..."); // SEMPRE FALA
+    // Se estiver no PEDIDO → REMOVER item
+    if (this.activeCarousel === "order") {
+      if (!window.orderItems || window.orderItems.length === 0) {
+        this.speak("Não há itens no pedido para remover.");
+        return;
+      }
 
-    if (typeof window.deleteCurrentOrderItem === "function") {
-      window.deleteCurrentOrderItem();
-    } else {
-      this.speak("Função de remover não disponível.");
-      console.error("deleteCurrentOrderItem não é uma função");
+      this.speak("Removendo item...");
+
+      if (typeof window.deleteCurrentOrderItem === "function") {
+        window.deleteCurrentOrderItem();
+      } else {
+        this.speak("Função de remover não disponível.");
+        console.error("deleteCurrentOrderItem não é uma função");
+      }
+
+      return;
     }
   }
 
